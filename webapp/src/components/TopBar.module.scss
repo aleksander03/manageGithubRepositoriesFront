@@ -1,0 +1,20 @@
+$padding-size: 20px;
+
+.mainContainer{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.rightContainer{
+    display: flex;
+}
+
+.option{
+    padding: $padding-size;
+}
+
+.rightText{
+    padding: $padding-size;
+    display: inline-block;
+}

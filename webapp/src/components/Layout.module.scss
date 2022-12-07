@@ -1,0 +1,28 @@
+.mainContainer{
+    width: 100%;
+    min-height: 100vh;
+    background-color: #D9D9D9;
+}
+
+.topBar{
+    height: 75px;
+}
+
+.leftBar{
+    width: 200px;
+    margin: 10px;
+    float: left;
+}
+
+.leftBarButton{
+    margin: 10px;
+}
+
+.leftBarRowName{
+    margin: auto;
+    margin-left: 5px;
+}
+
+.content{
+    float: left;
+}
