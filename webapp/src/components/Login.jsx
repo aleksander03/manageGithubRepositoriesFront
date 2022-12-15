@@ -16,7 +16,7 @@ const Login = () => {
   const onSuccess = async (response) => {
     localStorage.setItem("loggedIn", true);
     //{"access_token":"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","token_type":"bearer","scope":"repo,user"}
-    fetch("http://localhost:5000/api/login", {
+    await fetch("http://localhost:5000/api/login", {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -33,7 +33,7 @@ const Login = () => {
         localStorage.setItem("accessToken", body.access_token);
       });
 
-    fetch("http://localhost:5000/api/getUser", {
+    await fetch("http://localhost:5000/api/getUser", {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -47,7 +47,6 @@ const Login = () => {
         return response.json();
       })
       .then((body) => {
-        console.log(body.data);
         localStorage.setItem("imie_nazwisko", body.data.name);
         localStorage.setItem("email", body.data.email);
         localStorage.setItem("updatedAt", body.data.updated_at);
@@ -68,6 +67,7 @@ const Login = () => {
           onSuccess={onSuccess}
           onFailure={onFailure}
           className={classes.loginButton}
+          redirectUri="http://localhost:3000/"
           scope="user, repo"
         >
           {/* <Button className={classes.loginButton} onClick={onSuccess}> */}
