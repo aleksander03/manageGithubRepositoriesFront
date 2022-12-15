@@ -1,5 +1,4 @@
 import * as React from "react";
-import { Navigate } from "react-router-dom";
 import { useState } from "react";
 import Box from "@mui/material/Box";
 import classes from "./Layout.module.scss";
@@ -7,16 +6,17 @@ import { Divider } from "@mui/material";
 import TopBar from "./TopBar";
 import Content from "./Content";
 import LeftBar, { leftBarItems } from "./LeftBar";
+import { Navigate } from "react-router-dom";
 
 const Layout = () => {
-  const [loggedIn, setLoggedIn] = useState(localStorage.getItem("loggedIn"));
   const [content, setContent] = useState(
     localStorage.getItem("content")
       ? localStorage.getItem("content")
       : "organisations"
   );
 
-  if (!loggedIn) return <Navigate to="/login" />;
+  const loggedIn = localStorage.getItem("loggedIn");
+  if (loggedIn !== "true") return <Navigate to="/login" />;
 
   const changeContent = (newContent) => {
     localStorage.setItem("content", newContent);

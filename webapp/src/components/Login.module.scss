@@ -9,16 +9,19 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 20vw;
-    height: 53vh;
-    min-width: 300px;
-    min-height: 400px;
-    background-color: #2f00ff;
+    width: 300px;
+    height: 100px;
+    background-color: #1976d2;
     border-radius: 10px;
+    text-align: center;
+    padding: 10px;
+    padding-top: 15px;
+    padding-bottom: 15px;
 }
 
 .appName{
-    color:aquamarine;
+    color: #D9D9D9;
+    padding-top: 5px;
 }
 
 .loginButton{
@@ -26,6 +29,10 @@
     background-color: black;
     color: #D9D9D9;
     border-radius: 5px;
+    margin-top: 5px;
+    &:hover{
+        cursor: pointer;
+    }
 }
 
 .loginButtonContent{
@@ -34,4 +41,5 @@
     padding-top: 1px;
     padding-bottom: 1px;
     float: left;
+    color: #D9D9D9;
 }

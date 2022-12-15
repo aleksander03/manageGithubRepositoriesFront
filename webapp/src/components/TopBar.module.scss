@@ -12,6 +12,9 @@ $padding-size: 20px;
 
 .option{
     padding: $padding-size;
+    &:hover{
+        background-color: transparent;
+    }
 }
 
 .rightText{

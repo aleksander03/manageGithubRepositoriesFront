@@ -1,36 +1,76 @@
 import { Box } from "@mui/system";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import React from "react";
 import LoginGithub from "react-login-github";
-import { useState } from "react";
 import classes from "./Login.module.scss";
 import GitHubIcon from "@mui/icons-material/GitHub";
-import { Typography } from "@mui/material";
+import { Button, Typography } from "@mui/material";
 
 const Login = () => {
+  const navigate = useNavigate();
   const clientId = process.env.REACT_APP_CLIENT_ID;
-  const [loggedIn, setLoggedIn] = useState(localStorage.getItem("loggedIn"));
-  const onSuccess = (response) => {
-    console.log(response);
+
+  const loggedIn = localStorage.getItem("loggedIn");
+  if (loggedIn === "true") return <Navigate to="/" />;
+
+  const onSuccess = async (response) => {
     localStorage.setItem("loggedIn", true);
-    setLoggedIn(true);
+    //{"access_token":"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","token_type":"bearer","scope":"repo,user"}
+    fetch("http://localhost:5000/api/login", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        code: response.code,
+      }),
+    })
+      .then((response) => {
+        return response.json();
+      })
+      .then((body) => {
+        localStorage.setItem("accessToken", body.access_token);
+      });
+
+    fetch("http://localhost:5000/api/getUser", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        token: localStorage.getItem("accessToken"),
+      }),
+    })
+      .then((response) => {
+        return response.json();
+      })
+      .then((body) => {
+        console.log(body.data);
+        localStorage.setItem("imie_nazwisko", body.data.name);
+        localStorage.setItem("email", body.data.email);
+        localStorage.setItem("updatedAt", body.data.updated_at);
+      });
+
+    navigate("/");
   };
   const onFailure = (response) => console.error(response);
-
-  if (loggedIn) return <Navigate to="/" />;
 
   return (
     <Box className={classes.mainContainer}>
       <Box className={classes.container}>
-        <Typography variant="h3" className={classes.appName}>
-          Manage github repositories
+        <Typography variant="h4" className={classes.appName}>
+          DISMaGR
         </Typography>
         <LoginGithub
           clientId={clientId}
           onSuccess={onSuccess}
           onFailure={onFailure}
           className={classes.loginButton}
+          scope="user, repo"
         >
+          {/* <Button className={classes.loginButton} onClick={onSuccess}> */}
           <Box>
             <GitHubIcon
               color="primary"
@@ -41,6 +81,7 @@ const Login = () => {
               Zaloguj się
             </Typography>
           </Box>
+          {/* </Button> */}
         </LoginGithub>
       </Box>
     </Box>
