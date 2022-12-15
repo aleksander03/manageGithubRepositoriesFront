@@ -1,9 +1,7 @@
 import express from "express";
-import axios from "axios";
 import bodyParser from "body-parser";
 import cors from "cors";
 import request from "request";
-import { application, response } from "express";
 import { Octokit } from "@octokit/rest";
 import { PrismaClient } from "@prisma/client";
 
@@ -53,13 +51,52 @@ app.post("/api/getUser", async (req, res) => {
         },
       });
     }
-    console.log(user);
     res.send(user);
   } catch (error) {
-    console.log(error);
     res.send(error);
   }
 });
+
+app.post("/api/addExistingOrganization", async (req, res) => {
+  const token = req.body.token;
+  const org = req.body.organization;
+  const octokit = new Octokit({ auth: token });
+
+  try {
+    const response = await octokit.request("GET /orgs/{org}", {
+      org: org,
+    });
+    //issues_url - zmienna w response
+    let organization = await prisma.organizations.findUnique({
+      where: { link: response.data.url },
+    });
+    if (!organization)
+      organization = await prisma.organizations.create({
+        data: {
+          name: response.data.login,
+          link: response.data.url,
+        },
+      });
+    res.send(organization);
+  } catch (error) {
+    res.send(error);
+  }
+});
+
+// app.post("/api/createOrganization", async (req, res) => {
+//   try{
+//     await request.post({
+//       url: `https://github.hpe.com/api/v3/admin/organizations`,
+//       headers:{
+
+//       }
+//     })
+    
+//   }catch(error){
+//     console.log(error)
+//     res.send(error)
+//   }
+// })
 
 app.get("/", function (req, res) {
   res.send("Get something");

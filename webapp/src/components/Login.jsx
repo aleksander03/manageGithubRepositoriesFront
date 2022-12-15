@@ -45,7 +45,6 @@ const Login = () => {
         return response.json();
       })
       .then((body) => {
-        console.log(body);
         localStorage.setItem("email", body.githubEmail);
         localStorage.setItem("isProfessor", body.isProfessor);
         localStorage.setItem("name", body.name);
@@ -71,7 +70,7 @@ const Login = () => {
           onFailure={onFailure}
           className={classes.loginButton}
           redirectUri="http://localhost:3000/"
-          scope="user, repo"
+          scope="read:user, admin:org, repo"
         >
           {/* <Button className={classes.loginButton} onClick={onSuccess}> */}
           <Box>

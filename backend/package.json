@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "prisma migrate": "npx prisma migrate dev --name init",
-    "prisma generate": "npx prisma generate"
+    "prisma_migrate": "npx prisma migrate dev --name init",
+    "prisma_generate": "npx prisma generate"
   },
   "author": "Aleksander Uljaniwski",
   "license": "ISC",
@@ -14,7 +14,6 @@
   "dependencies": {
     "@octokit/rest": "^19.0.5",
     "@prisma/client": "^4.7.1",
-    "axios": "^1.2.1",
     "body-parser": "^1.20.1",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",

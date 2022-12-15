@@ -17,11 +17,12 @@ CREATE TABLE "sections" (
 );
 
 -- CreateTable
-CREATE TABLE "organisations" (
+CREATE TABLE "organizations" (
     "id" SERIAL NOT NULL,
     "name" VARCHAR(255) NOT NULL,
+    "link" VARCHAR(255) NOT NULL,
 
-    CONSTRAINT "organisations_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "organizations_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -59,6 +60,7 @@ CREATE TABLE "users" (
     "surname" VARCHAR(50),
     "githubEmail" VARCHAR(255) NOT NULL,
     "studentEmail" VARCHAR(255),
+    "role" VARCHAR(255),
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
@@ -73,7 +75,7 @@ CREATE UNIQUE INDEX "users_studentEmail_key" ON "users"("studentEmail");
 ALTER TABLE "repositories" ADD CONSTRAINT "repositories_sectionId_fkey" FOREIGN KEY ("sectionId") REFERENCES "sections"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "sections" ADD CONSTRAINT "sections_organisationId_fkey" FOREIGN KEY ("organisationId") REFERENCES "organisations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "sections" ADD CONSTRAINT "sections_organisationId_fkey" FOREIGN KEY ("organisationId") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "repositoriesToUsers" ADD CONSTRAINT "repositoriesToUsers_repositoryId_fkey" FOREIGN KEY ("repositoryId") REFERENCES "repositories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -88,7 +90,7 @@ ALTER TABLE "sectionsToUsers" ADD CONSTRAINT "sectionsToUsers_sectionId_fkey" FO
 ALTER TABLE "sectionsToUsers" ADD CONSTRAINT "sectionsToUsers_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "organisationsToUsers" ADD CONSTRAINT "organisationsToUsers_organisationId_fkey" FOREIGN KEY ("organisationId") REFERENCES "organisations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "organisationsToUsers" ADD CONSTRAINT "organisationsToUsers_organisationId_fkey" FOREIGN KEY ("organisationId") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "organisationsToUsers" ADD CONSTRAINT "organisationsToUsers_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -12,7 +12,7 @@ datasource db {
 
 model repositories {
   id                  Int                   @id @default(autoincrement())
-  link                String                @db.VarChar(255)
+  link                String                @unique @db.VarChar(255)
   section             sections              @relation(fields: [sectionId], references: [id])
   sectionId           Int
   repositoriesToUsers repositoriesToUsers[]
@@ -22,16 +22,17 @@ model sections {
   id              Int               @id @default(autoincrement())
   name            String            @db.VarChar(255)
   repositories    repositories[]
-  organisation    organisations     @relation(fields: [organisationId], references: [id])
-  organisationId  Int
+  organization    organizations     @relation(fields: [organizationId], references: [id])
+  organizationId  Int
   sectionsToUsers sectionsToUsers[]
 }
 
-model organisations {
+model organizations {
   id                   Int                    @id @default(autoincrement())
   name                 String                 @db.VarChar(255)
+  link                 String                 @unique @db.VarChar(255)
   sections             sections[]
-  organisationsToUsers organisationsToUsers[]
+  organizationsToUsers organizationsToUsers[]
 }
 
 model repositoriesToUsers {
@@ -50,11 +51,11 @@ model sectionsToUsers {
   userId    Int
 }
 
-model organisationsToUsers {
+model organizationsToUsers {
   id             Int           @id @default(autoincrement())
-  organisation   organisations @relation(fields: [organisationId], references: [id])
+  organisation   organizations @relation(fields: [organizationId], references: [id])
   user           users         @relation(fields: [userId], references: [id])
-  organisationId Int
+  organizationId Int
   userId         Int
 }
 
@@ -68,5 +69,5 @@ model users {
   role                 String?                @db.VarChar(255)
   repositoriesToUsers  repositoriesToUsers[]
   sectionsToUsers      sectionsToUsers[]
-  organisationsToUsers organisationsToUsers[]
+  organisationsToUsers organizationsToUsers[]
 }
