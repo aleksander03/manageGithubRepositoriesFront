@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model repositories {
+  id                  Int                   @id @default(autoincrement())
+  link                String                @db.VarChar(255)
+  section             sections              @relation(fields: [sectionId], references: [id])
+  sectionId           Int
+  repositoriesToUsers repositoriesToUsers[]
+}
+
+model sections {
+  id              Int               @id @default(autoincrement())
+  name            String            @db.VarChar(255)
+  repositories    repositories[]
+  organisation    organisations     @relation(fields: [organisationId], references: [id])
+  organisationId  Int
+  sectionsToUsers sectionsToUsers[]
+}
+
+model organisations {
+  id                   Int                    @id @default(autoincrement())
+  name                 String                 @db.VarChar(255)
+  sections             sections[]
+  organisationsToUsers organisationsToUsers[]
+}
+
+model repositoriesToUsers {
+  id           Int          @id @default(autoincrement())
+  repository   repositories @relation(fields: [repositoryId], references: [id])
+  user         users        @relation(fields: [userId], references: [id])
+  repositoryId Int
+  userId       Int
+}
+
+model sectionsToUsers {
+  id        Int      @id @default(autoincrement())
+  section   sections @relation(fields: [sectionId], references: [id])
+  user      users    @relation(fields: [userId], references: [id])
+  sectionId Int
+  userId    Int
+}
+
+model organisationsToUsers {
+  id             Int           @id @default(autoincrement())
+  organisation   organisations @relation(fields: [organisationId], references: [id])
+  user           users         @relation(fields: [userId], references: [id])
+  organisationId Int
+  userId         Int
+}
+
+model users {
+  id                   Int                    @id @default(autoincrement())
+  isProfessor          Boolean                @default(false)
+  name                 String?                @db.VarChar(50)
+  surname              String?                @db.VarChar(50)
+  githubEmail          String                 @unique @db.VarChar(255)
+  studentEmail         String?                @unique @db.VarChar(255)
+  role                 String?                @db.VarChar(255)
+  repositoriesToUsers  repositoriesToUsers[]
+  sectionsToUsers      sectionsToUsers[]
+  organisationsToUsers organisationsToUsers[]
+}

@@ -14,8 +14,6 @@ const Login = () => {
   if (loggedIn === "true") return <Navigate to="/" />;
 
   const onSuccess = async (response) => {
-    localStorage.setItem("loggedIn", true);
-    //{"access_token":"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","token_type":"bearer","scope":"repo,user"}
     await fetch("http://localhost:5000/api/login", {
       method: "POST",
       headers: {
@@ -47,10 +45,15 @@ const Login = () => {
         return response.json();
       })
       .then((body) => {
-        localStorage.setItem("imie_nazwisko", body.data.name);
-        localStorage.setItem("email", body.data.email);
-        localStorage.setItem("updatedAt", body.data.updated_at);
+        console.log(body);
+        localStorage.setItem("email", body.githubEmail);
+        localStorage.setItem("isProfessor", body.isProfessor);
+        localStorage.setItem("name", body.name);
+        localStorage.setItem("studentEmail", body.studentEmail);
+        localStorage.setItem("surname", body.surname);
       });
+
+    localStorage.setItem("loggedIn", true);
 
     navigate("/");
   };

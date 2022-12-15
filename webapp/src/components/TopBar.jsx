@@ -28,6 +28,14 @@ const TopBar = (props) => {
     setAnchorEl(null);
   };
 
+  const name = localStorage.getItem("name")
+    ? localStorage.getItem("name")
+    : "Imię";
+
+  const surname = localStorage.getItem("surname")
+    ? localStorage.getItem("surname")
+    : "Nazwisko";
+
   return (
     <Box className={classes.mainContainer}>
       <Typography variant="h5" className={classes.rightText}>
@@ -35,9 +43,7 @@ const TopBar = (props) => {
       </Typography>
       <Box className={classes.rightContainer}>
         <Typography variant="h5" className={classes.option}>
-          {localStorage.getItem("imie_nazwisko")
-            ? localStorage.getItem("imie_nazwisko")
-            : "Imię i nazwisko"}
+          {name} {surname}
         </Typography>
         <IconButton
           size="large"
