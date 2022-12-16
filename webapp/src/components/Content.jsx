@@ -1,5 +1,5 @@
 import React from "react";
-import Organizations from "./Organisations";
+import Organizations from "./Organizations";
 import Sections from "./Sections";
 import StudentsList from "./StudentsList";
 import AddFromCsv from "./AddFromCsv";
@@ -9,7 +9,7 @@ const Content = () => {
   const content = localStorage.getItem("content");
   switch (content) {
     //leftBarItems from Layout.jsx
-    case "organisations":
+    case "organizations":
       return <Organizations />;
     case "sections":
       return <Sections />;

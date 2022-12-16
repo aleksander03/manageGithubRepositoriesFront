@@ -12,7 +12,7 @@ const Layout = () => {
   const [content, setContent] = useState(
     localStorage.getItem("content")
       ? localStorage.getItem("content")
-      : "organisations"
+      : "organizations"
   );
 
   const loggedIn = localStorage.getItem("loggedIn");

@@ -61,13 +61,26 @@ model organizationsToUsers {
 
 model users {
   id                   Int                    @id @default(autoincrement())
-  isProfessor          Boolean                @default(false)
   name                 String?                @db.VarChar(50)
   surname              String?                @db.VarChar(50)
   githubEmail          String                 @unique @db.VarChar(255)
   studentEmail         String?                @unique @db.VarChar(255)
-  role                 String?                @db.VarChar(255)
   repositoriesToUsers  repositoriesToUsers[]
   sectionsToUsers      sectionsToUsers[]
   organisationsToUsers organizationsToUsers[]
+  usersToRoles         usersToRoles[]
+}
+
+model roles {
+  id           Int            @id @default(autoincrement())
+  role         String         @db.VarChar(255)
+  usersToRoles usersToRoles[]
+}
+
+model usersToRoles {
+  id     Int   @id @default(autoincrement())
+  user   users @relation(fields: [userId], references: [id])
+  role   roles @relation(fields: [roleId], references: [id])
+  userId Int
+  roleId Int
 }

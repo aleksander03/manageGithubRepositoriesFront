@@ -8,7 +8,7 @@ import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import classes from "./Layout.module.scss";
 
 export const leftBarItems = [
-  { id: "organisations", name: "Organizacje" },
+  { id: "organizations", name: "Organizacje" },
   { id: "sections", name: "Sekcje" },
   { id: "studentsList", name: "Lista studentów" },
   { id: "addFromCsv", name: "Dodaj z CSV" },
@@ -17,7 +17,7 @@ export const leftBarItems = [
 
 const iconButton = (icon) => {
   switch (icon) {
-    case "organisations":
+    case "organizations":
       return <GroupWorkIcon />;
     case "sections":
       return <GroupIcon />;

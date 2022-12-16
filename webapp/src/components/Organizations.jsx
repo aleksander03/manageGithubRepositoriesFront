@@ -1,0 +1,137 @@
+import {
+  Box,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  TableSortLabel,
+  TextField,
+} from "@mui/material";
+import React, { useEffect, useState } from "react";
+import classes from "./Organizations.module.scss";
+
+const headCells = [
+  { id: "id", label: "ID", numeric: true },
+  { id: "name", label: "Nazwa organizacji", numeric: false },
+  { id: "link", label: "Link", numeric: false },
+];
+
+const Organizations = () => {
+  const [data, setData] = useState([]);
+  const [orderBy, setOrderBy] = useState(headCells[0].id);
+  const [order, setOrder] = useState("desc");
+  const [filter, setFilter] = useState("");
+
+  const getOrganizations = async (orderBy, order, filter) => {
+    await fetch(
+      `http://localhost:5000/api/getOrganizations?orderBy=${orderBy}&order=${order}&filter=${filter}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    )
+      .then((response) => response.json())
+      .then((data) => setData(data));
+  };
+
+  // const addNewOrg = async () => {
+  //   await fetch("http://localhost:5000/api/addExistingOrganization", {
+  //     method: "POST",
+  //     headers: {
+  //       Accept: "application/json",
+  //       "Content-Type": "application/json",
+  //     },
+  //     body: JSON.stringify({
+  //       token: localStorage.getItem("accessToken"),
+  //       organization: "OrganizacjaProbna",
+  //     }),
+  //   })
+  //     .then((response) => {
+  //       return response.json();
+  //     })
+  //     .then((body) => {
+  //       console.log(body);
+  //       return body;
+  //     });
+  // };
+  const tableTopBar = headCells.map((headCell) => {
+    return (
+      <TableCell key={headCell.id} align={headCell.numeric ? "right" : "left"}>
+        <TableSortLabel
+          active={orderBy === headCell.id}
+          direction={order}
+          onClick={() => handleSort(headCell.id)}
+        >
+          {headCell.label}
+        </TableSortLabel>
+      </TableCell>
+    );
+  });
+
+  const tableRow = (row) => {
+    return (
+      <TableRow>
+        <TableCell align="right">{row.id}</TableCell>
+        <TableCell>{row.name}</TableCell>
+        <TableCell>{row.link}</TableCell>
+      </TableRow>
+    );
+  };
+
+  const tableBody =
+    data.length > 1 ? (
+      data.map((row) => tableRow(row))
+    ) : data.length === 1 ? (
+      tableRow(data[0])
+    ) : (
+      <></>
+    );
+
+  useEffect(() => {
+    getOrganizations(orderBy, order, filter);
+  }, []);
+
+  const handleSort = (label) => {
+    const orderTmp =
+      orderBy !== label ? "desc" : order === "asc" ? "desc" : "asc";
+    setOrder(orderTmp);
+    if (orderBy !== label) setOrderBy(label);
+    getOrganizations(label, orderTmp, filter);
+  };
+
+  const handleTyping = (value) => {
+    setFilter(value);
+    getOrganizations(orderBy, order, value);
+  };
+
+  return (
+    <>
+      <Box className={classes.topBar}>
+        <Button variant="contained" size="large">
+          Dodaj istniejącą
+        </Button>
+        <TextField
+          label="Filtruj"
+          type="search"
+          variant="filled"
+          size="small"
+          value={filter}
+          onChange={(event) => handleTyping(event.target.value)}
+        />
+      </Box>
+      <Table>
+        <TableHead>
+          <TableRow>{tableTopBar}</TableRow>
+        </TableHead>
+        <TableBody>{tableBody}</TableBody>
+      </Table>
+    </>
+  );
+};
+
+export default Organizations;

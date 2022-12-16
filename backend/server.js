@@ -42,7 +42,13 @@ app.post("/api/getUser", async (req, res) => {
       where: { githubEmail: response.data.email },
     });
     if (!user) {
-      const name = response.data.name.split(" ");
+      let name;
+      if (response.data.name) {
+        name = response.data.name.split(" ");
+      } else {
+        name = ["Undefined", "Undefined"];
+      }
+      console.log(name);
       user = await prisma.users.create({
         data: {
           githubEmail: response.data.email,
@@ -77,26 +83,33 @@ app.post("/api/addExistingOrganization", async (req, res) => {
           link: response.data.url,
         },
       });
-    res.send(organization);
+    res.send(200);
   } catch (error) {
     res.send(error);
   }
 });
 
-// app.post("/api/createOrganization", async (req, res) => {
-//   try{
-//     await request.post({
-//       url: `https://github.hpe.com/api/v3/admin/organizations`,
-//       headers:{
+app.get("/api/getOrganizations", async (req, res) => {
+  try {
+    const orderBy = req.query.orderBy;
+    const order = req.query.order;
+    const filter = req.query.filter;
 
-//       }
-//     })
-    
-//   }catch(error){
-//     console.log(error)
-//     res.send(error)
-//   }
-// })
+    const organizations = await prisma.organizations.findMany({
+      where: {
+        name: {
+          contains: filter,
+        },
+      },
+      orderBy: {
+        [orderBy]: order,
+      },
+    });
+    res.send(organizations);
+  } catch (error) {
+    res.send(error);
+  }
+});
 
 app.get("/", function (req, res) {
   res.send("Get something");
