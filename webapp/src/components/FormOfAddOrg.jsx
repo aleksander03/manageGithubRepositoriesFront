@@ -30,8 +30,10 @@ const FormOfAddOrg = () => {
         }),
       }
     );
-    if (response.status === 201) setIsError(false);
-    else if (response.status === 204) {
+    if (response.status === 201) {
+      setIsError(false);
+      alert(`Organizacja ${nameGitHub} została dodana!`);
+    } else if (response.status === 204) {
       alert(`Organizacja ${nameGitHub} już istnieje w bazie danych!`);
       setIsError(false);
     } else {

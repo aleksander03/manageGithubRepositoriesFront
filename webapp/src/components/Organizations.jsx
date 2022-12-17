@@ -26,7 +26,7 @@ const headCells = [
 const Organizations = () => {
   const [data, setData] = useState([]);
   const [orderBy, setOrderBy] = useState(headCells[0].id);
-  const [order, setOrder] = useState("desc");
+  const [order, setOrder] = useState("asc");
   const [filter, setFilter] = useState("");
   const siteName = "Organizacje";
   const navigate = useNavigate();
@@ -64,7 +64,7 @@ const Organizations = () => {
     return (
       <TableRow>
         <TableCell align="right">{row.id}</TableCell>
-        <TableCell>{row.name ? row.name : row.githubName}</TableCell>
+        <TableCell>{row.name}</TableCell>
         <TableCell>{row.link}</TableCell>
       </TableRow>
     );
@@ -121,7 +121,9 @@ const Organizations = () => {
               variant="filled"
               size="small"
               value={filter}
-              onChange={(event) => handleTyping(event.target.value)}
+              onChange={(event) =>
+                handleTyping(event.target.value.toUpperCase())
+              }
               className={classes.numberOfOrgs}
             />
           </Box>

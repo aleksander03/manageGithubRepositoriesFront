@@ -38,9 +38,11 @@ app.post("/api/getUser", async (req, res) => {
 
   try {
     const response = await octokit.request("GET /user", {});
+    
     let user = await prisma.users.findUnique({
       where: { githubEmail: response.data.email },
     });
+
     if (!user) {
       let name;
       if (response.data.name) {
@@ -48,7 +50,7 @@ app.post("/api/getUser", async (req, res) => {
       } else {
         name = ["Undefined", "Undefined"];
       }
-      console.log(name);
+
       user = await prisma.users.create({
         data: {
           githubEmail: response.data.email,
@@ -57,6 +59,7 @@ app.post("/api/getUser", async (req, res) => {
         },
       });
     }
+
     res.send(user);
   } catch (error) {
     res.send(error);
@@ -73,22 +76,26 @@ app.put("/api/addExistingOrganization", async (req, res) => {
     const response = await octokit.request("GET /orgs/{org}", {
       org: org,
     });
+
     //issues_url - zmienna w response
     let organization = await prisma.organizations.findUnique({
       where: { link: response.data.url },
     });
+
     if (!organization) {
       organization = await prisma.organizations.create({
         data: {
-          githubName: response.data.login,
+          githubName: response.data.login.toUpperCase(),
           link: response.data.url,
-          name: name,
+          name: name ? name.toUpperCase() : response.data.login.toUpperCase(),
         },
       });
+
       res.sendStatus(201);
     } else {
       res.sendStatus(204);
     }
+    
   } catch (error) {
     res.sendStatus(418);
   }
