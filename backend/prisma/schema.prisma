@@ -29,7 +29,8 @@ model sections {
 
 model organizations {
   id                   Int                    @id @default(autoincrement())
-  name                 String                 @db.VarChar(255)
+  name                 String?                @unique @db.VarChar(255)
+  githubName           String                 @unique @db.VarChar(255)
   link                 String                 @unique @db.VarChar(255)
   sections             sections[]
   organizationsToUsers organizationsToUsers[]
@@ -73,7 +74,7 @@ model users {
 
 model roles {
   id           Int            @id @default(autoincrement())
-  role         String         @db.VarChar(255)
+  role         String         @unique @db.VarChar(255)
   usersToRoles usersToRoles[]
 }
 

@@ -63,9 +63,10 @@ app.post("/api/getUser", async (req, res) => {
   }
 });
 
-app.post("/api/addExistingOrganization", async (req, res) => {
+app.put("/api/addExistingOrganization", async (req, res) => {
   const token = req.body.token;
   const org = req.body.organization;
+  const name = req.body.name;
   const octokit = new Octokit({ auth: token });
 
   try {
@@ -79,13 +80,14 @@ app.post("/api/addExistingOrganization", async (req, res) => {
     if (!organization)
       organization = await prisma.organizations.create({
         data: {
-          name: response.data.login,
+          githubName: response.data.login,
           link: response.data.url,
+          name: name,
         },
       });
-    res.send(200);
+    res.sendStatus(200);
   } catch (error) {
-    res.send(error);
+    res.sendStatus(400);
   }
 });
 

@@ -15,6 +15,7 @@ import classes from "./Organizations.module.scss";
 import TopBar from "./TopBar";
 import { Divider } from "@mui/material";
 import LeftBar from "./LeftBar";
+import { useNavigate } from "react-router-dom";
 
 const headCells = [
   { id: "id", label: "ID", numeric: true },
@@ -28,6 +29,7 @@ const Organizations = () => {
   const [order, setOrder] = useState("desc");
   const [filter, setFilter] = useState("");
   const siteName = "Organizacje";
+  const navigate = useNavigate();
 
   const getOrganizations = async (orderBy, order, filter) => {
     await fetch(
@@ -62,7 +64,7 @@ const Organizations = () => {
     return (
       <TableRow>
         <TableCell align="right">{row.id}</TableCell>
-        <TableCell>{row.name}</TableCell>
+        <TableCell>{row.name ? row.name : row.githubName}</TableCell>
         <TableCell>{row.link}</TableCell>
       </TableRow>
     );
@@ -106,7 +108,11 @@ const Organizations = () => {
         </Box>
         <Box className={classesLayout.content}>
           <Box className={classes.topBar}>
-            <Button variant="contained" size="large">
+            <Button
+              variant="contained"
+              size="large"
+              onClick={() => navigate("/addexistingorganization")}
+            >
               Dodaj istniejącą
             </Button>
             <TextField
@@ -116,6 +122,7 @@ const Organizations = () => {
               size="small"
               value={filter}
               onChange={(event) => handleTyping(event.target.value)}
+              className={classes.numberOfOrgs}
             />
           </Box>
           <Table>
