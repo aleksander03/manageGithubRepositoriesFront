@@ -129,7 +129,6 @@ const Organizations = () => {
               onChange={(event) =>
                 handleTyping(event.target.value.toUpperCase())
               }
-              className={classes.numberOfOrgs}
             />
           </Box>
           <TableContainer sx={{ maxHeight: "calc(100vh - 145px)" }}>
