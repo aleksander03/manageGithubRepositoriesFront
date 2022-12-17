@@ -5,6 +5,7 @@
 /webapp/.pnp
 /webapp/.pnp.js
 /backend/node_modules
+/backend/prisma/migrations
 
 # testing
 /webapp/coverage

@@ -8,7 +8,7 @@ import {
 import { Box } from "@mui/system";
 import React, { useState } from "react";
 
-const FormOfAddOrg = (props) => {
+const FormOfAddOrg = () => {
   const [nameGitHub, setNameGitHub] = useState("");
   const [name, setName] = useState("");
   const [defaultName, setDefaultName] = useState(true);
@@ -30,8 +30,11 @@ const FormOfAddOrg = (props) => {
         }),
       }
     );
-    if (response.status === 200) setIsError(false);
-    else {
+    if (response.status === 201) setIsError(false);
+    else if (response.status === 204) {
+      alert(`Organizacja ${nameGitHub} już istnieje w bazie danych!`);
+      setIsError(false);
+    } else {
       setIsError(true);
       alert(`Organizacja ${nameGitHub} nie udało się dodać!`);
     }

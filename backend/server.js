@@ -77,7 +77,7 @@ app.put("/api/addExistingOrganization", async (req, res) => {
     let organization = await prisma.organizations.findUnique({
       where: { link: response.data.url },
     });
-    if (!organization)
+    if (!organization) {
       organization = await prisma.organizations.create({
         data: {
           githubName: response.data.login,
@@ -85,9 +85,12 @@ app.put("/api/addExistingOrganization", async (req, res) => {
           name: name,
         },
       });
-    res.sendStatus(200);
+      res.sendStatus(201);
+    } else {
+      res.sendStatus(204);
+    }
   } catch (error) {
-    res.sendStatus(400);
+    res.sendStatus(418);
   }
 });
 

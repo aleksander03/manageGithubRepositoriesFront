@@ -63,18 +63,6 @@ const AddExistingOrganization = () => {
             </Box>
             <Divider sx={{ border: 0 }} />
             {forms}
-            {numberOfOrgs > 1 && (
-              <Box className={classes.buttonContainer}>
-                <Button
-                  variant="contained"
-                  size="large"
-                  sx={{ height: 48 }}
-                  onClick={() => {}}
-                >
-                  Wyślij wszystkie
-                </Button>
-              </Box>
-            )}
           </Box>
         </Box>
       </Box>
