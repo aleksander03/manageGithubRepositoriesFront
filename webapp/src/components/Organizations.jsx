@@ -4,6 +4,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   TableSortLabel,
@@ -48,7 +49,11 @@ const Organizations = () => {
 
   const tableTopBar = headCells.map((headCell) => {
     return (
-      <TableCell key={headCell.id} align={headCell.numeric ? "right" : "left"}>
+      <TableCell
+        sx={{ backgroundColor: "#D9D9D9" }}
+        key={headCell.id}
+        align={headCell.numeric ? "right" : "left"}
+      >
         <TableSortLabel
           active={orderBy === headCell.id}
           direction={order}
@@ -127,12 +132,14 @@ const Organizations = () => {
               className={classes.numberOfOrgs}
             />
           </Box>
-          <Table>
-            <TableHead>
-              <TableRow>{tableTopBar}</TableRow>
-            </TableHead>
-            <TableBody>{tableBody}</TableBody>
-          </Table>
+          <TableContainer sx={{ maxHeight: "calc(100vh - 145px)" }}>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>{tableTopBar}</TableRow>
+              </TableHead>
+              <TableBody>{tableBody}</TableBody>
+            </Table>
+          </TableContainer>
         </Box>
       </Box>
     </Box>
