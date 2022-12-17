@@ -10,7 +10,11 @@ import {
   TextField,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
+import classesLayout from "./Layout.module.scss";
 import classes from "./Organizations.module.scss";
+import TopBar from "./TopBar";
+import { Divider } from "@mui/material";
+import LeftBar from "./LeftBar";
 
 const headCells = [
   { id: "id", label: "ID", numeric: true },
@@ -23,6 +27,7 @@ const Organizations = () => {
   const [orderBy, setOrderBy] = useState(headCells[0].id);
   const [order, setOrder] = useState("desc");
   const [filter, setFilter] = useState("");
+  const siteName = "Organizacje";
 
   const getOrganizations = async (orderBy, order, filter) => {
     await fetch(
@@ -39,26 +44,6 @@ const Organizations = () => {
       .then((data) => setData(data));
   };
 
-  // const addNewOrg = async () => {
-  //   await fetch("http://localhost:5000/api/addExistingOrganization", {
-  //     method: "POST",
-  //     headers: {
-  //       Accept: "application/json",
-  //       "Content-Type": "application/json",
-  //     },
-  //     body: JSON.stringify({
-  //       token: localStorage.getItem("accessToken"),
-  //       organization: "OrganizacjaProbna",
-  //     }),
-  //   })
-  //     .then((response) => {
-  //       return response.json();
-  //     })
-  //     .then((body) => {
-  //       console.log(body);
-  //       return body;
-  //     });
-  // };
   const tableTopBar = headCells.map((headCell) => {
     return (
       <TableCell key={headCell.id} align={headCell.numeric ? "right" : "left"}>
@@ -110,27 +95,38 @@ const Organizations = () => {
   };
 
   return (
-    <>
-      <Box className={classes.topBar}>
-        <Button variant="contained" size="large">
-          Dodaj istniejącą
-        </Button>
-        <TextField
-          label="Filtruj"
-          type="search"
-          variant="filled"
-          size="small"
-          value={filter}
-          onChange={(event) => handleTyping(event.target.value)}
-        />
+    <Box className={classesLayout.mainContainer}>
+      <Box className={classesLayout.topBar}>
+        <TopBar siteName={siteName} />
       </Box>
-      <Table>
-        <TableHead>
-          <TableRow>{tableTopBar}</TableRow>
-        </TableHead>
-        <TableBody>{tableBody}</TableBody>
-      </Table>
-    </>
+      <Divider />
+      <Box className={classesLayout.contentContainer}>
+        <Box className={classesLayout.leftBar}>
+          <LeftBar />
+        </Box>
+        <Box className={classesLayout.content}>
+          <Box className={classes.topBar}>
+            <Button variant="contained" size="large">
+              Dodaj istniejącą
+            </Button>
+            <TextField
+              label="Filtruj"
+              type="search"
+              variant="filled"
+              size="small"
+              value={filter}
+              onChange={(event) => handleTyping(event.target.value)}
+            />
+          </Box>
+          <Table>
+            <TableHead>
+              <TableRow>{tableTopBar}</TableRow>
+            </TableHead>
+            <TableBody>{tableBody}</TableBody>
+          </Table>
+        </Box>
+      </Box>
+    </Box>
   );
 };
 

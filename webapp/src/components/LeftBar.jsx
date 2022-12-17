@@ -6,12 +6,13 @@ import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import ArchiveIcon from "@mui/icons-material/Archive";
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import classes from "./Layout.module.scss";
+import { useNavigate } from "react-router-dom";
 
 export const leftBarItems = [
   { id: "organizations", name: "Organizacje" },
   { id: "sections", name: "Sekcje" },
   { id: "studentsList", name: "Lista studentów" },
-  { id: "addFromCsv", name: "Dodaj z CSV" },
+  { id: "addfromcsv", name: "Dodaj z CSV" },
   { id: "archive", name: "Archiwum" },
 ];
 
@@ -25,7 +26,7 @@ const iconButton = (icon) => {
       return <PeopleAltIcon />;
     case "archive":
       return <ArchiveIcon />;
-    case "addFromCsv":
+    case "addfromcsv":
       return <GroupAddIcon />;
     default:
       break;
@@ -33,7 +34,7 @@ const iconButton = (icon) => {
 };
 
 const LeftBar = (props) => {
-  const setContent = props.setContent;
+  const navigate = useNavigate();
   const leftBarItemsList = leftBarItems.map((row) => {
     return (
       <Box key={row.name}>
@@ -43,7 +44,7 @@ const LeftBar = (props) => {
           className={classes.leftBarButton}
           size="small"
           style={{ background: "transparent", color: "black" }}
-          onClick={() => setContent(row.id)}
+          onClick={() => navigate(`/${row.id}`)}
         >
           {iconButton(row.id)}{" "}
           <p className={classes.leftBarRowName}>{row.name}</p>

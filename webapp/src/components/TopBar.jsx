@@ -1,6 +1,6 @@
 import React from "react";
 import { Box } from "@mui/system";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { IconButton, Typography } from "@mui/material";
 import LanguageIcon from "@mui/icons-material/Language";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -14,6 +14,9 @@ import "./GlobalCssMenu.css";
 const TopBar = (props) => {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const navigate = useNavigate();
+  const loggedIn = localStorage.getItem("loggedIn");
+  if (loggedIn !== "true") return <Navigate to="/login" />;
+
   const logout = () => {
     localStorage.setItem("loggedIn", false);
     handleClose();
