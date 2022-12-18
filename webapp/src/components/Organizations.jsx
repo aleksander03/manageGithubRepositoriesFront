@@ -6,6 +6,7 @@ import {
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
   TableSortLabel,
   TextField,
@@ -19,22 +20,26 @@ import LeftBar from "./LeftBar";
 import { useNavigate } from "react-router-dom";
 
 const headCells = [
-  { id: "id", label: "ID", numeric: true },
   { id: "name", label: "Nazwa organizacji", numeric: false },
   { id: "link", label: "Link", numeric: false },
 ];
 
 const Organizations = () => {
+  const siteName = "Organizacje";
   const [data, setData] = useState([]);
+  const [countOfStudents, setCountOfStudents] = useState();
   const [orderBy, setOrderBy] = useState(headCells[0].id);
   const [order, setOrder] = useState("asc");
   const [filter, setFilter] = useState("");
-  const siteName = "Organizacje";
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowPerPage] = useState(10);
   const navigate = useNavigate();
 
-  const getOrganizations = async (orderBy, order, filter) => {
+  const getOrganizations = async (orderBy, order, filter, page, rows) => {
     await fetch(
-      `http://localhost:5000/api/getOrganizations?orderBy=${orderBy}&order=${order}&filter=${filter}`,
+      `http://localhost:5000/api/getOrganizations?perPage=${rows}&page=${page}&orderBy=${orderBy}&order=${order}&filter=${filter}&userId=${localStorage.getItem(
+        "userId"
+      )}`,
       {
         method: "GET",
         headers: {
@@ -45,6 +50,23 @@ const Organizations = () => {
     )
       .then((response) => response.json())
       .then((data) => setData(data));
+  };
+
+  const getOrganizationsCount = async (orderBy, filter) => {
+    await fetch(
+      `http://localhost:5000/api/getOrganizationsCount?orderBy=${orderBy}&filter=${filter}&userId=${localStorage.getItem(
+        "userId"
+      )}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    )
+      .then((response) => response.json())
+      .then((body) => setCountOfStudents(body._all));
   };
 
   const tableTopBar = headCells.map((headCell) => {
@@ -68,7 +90,6 @@ const Organizations = () => {
   const tableRow = (row) => {
     return (
       <TableRow>
-        <TableCell align="right">{row.id}</TableCell>
         <TableCell>{row.name}</TableCell>
         <TableCell>{row.link}</TableCell>
       </TableRow>
@@ -84,22 +105,25 @@ const Organizations = () => {
       <></>
     );
 
-  useEffect(() => {
-    getOrganizations(orderBy, order, filter);
-  }, []);
-
   const handleSort = (label) => {
     const orderTmp =
       orderBy !== label ? "desc" : order === "asc" ? "desc" : "asc";
     setOrder(orderTmp);
     if (orderBy !== label) setOrderBy(label);
-    getOrganizations(label, orderTmp, filter);
+    getOrganizations(label, orderTmp, filter, page, rowsPerPage);
+    getOrganizationsCount(label, filter);
   };
 
   const handleTyping = (value) => {
     setFilter(value);
-    getOrganizations(orderBy, order, value);
+    getOrganizations(orderBy, order, value, page, rowsPerPage);
+    getOrganizationsCount(orderBy, value);
   };
+
+  useEffect(() => {
+    getOrganizations(orderBy, order, filter, page, rowsPerPage);
+    getOrganizationsCount(orderBy, filter);
+  }, []);
 
   return (
     <Box className={classesLayout.mainContainer}>
@@ -131,7 +155,7 @@ const Organizations = () => {
               }
             />
           </Box>
-          <TableContainer sx={{ maxHeight: "calc(100vh - 145px)" }}>
+          <TableContainer sx={{ height: "calc(100vh - 197px)" }}>
             <Table stickyHeader>
               <TableHead>
                 <TableRow>{tableTopBar}</TableRow>
@@ -139,6 +163,28 @@ const Organizations = () => {
               <TableBody>{tableBody}</TableBody>
             </Table>
           </TableContainer>
+          <TablePagination
+            rowsPerPageOptions={[10, 25, 100]}
+            count={countOfStudents}
+            component="div"
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={(event, newPage) => {
+              setPage(newPage);
+              getOrganizations(orderBy, order, filter, newPage, rowsPerPage);
+            }}
+            onRowsPerPageChange={(event) => {
+              setRowPerPage(event.target.value);
+              getOrganizations(
+                orderBy,
+                order,
+                filter,
+                page,
+                event.target.value
+              );
+              setPage(0);
+            }}
+          />
         </Box>
       </Box>
     </Box>

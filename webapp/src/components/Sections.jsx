@@ -7,6 +7,7 @@ import {
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
   TableSortLabel,
   TextField,
@@ -18,21 +19,54 @@ import classesLayout from "./Layout.module.scss";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import classes from "./Sections.module.scss";
+import { useEffect } from "react";
 
-const headCells = [
-  { id: "id", label: "ID", numeric: true },
-  { id: "name", label: "Nazwa", numeric: false },
-];
+const headCells = [{ id: "name", label: "Nazwa", numeric: false }];
 
 const Sections = () => {
   const siteName = "Sekcje";
   const [data, setData] = useState([]);
+  const [countOfStudents, setCountOfStudents] = useState();
   const [orderBy, setOrderBy] = useState(headCells[0].id);
   const [order, setOrder] = useState("asc");
   const [filter, setFilter] = useState("");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowPerPage] = useState(10);
   const navigate = useNavigate();
 
-  //const getSections = () => {}
+  const getSections = async (orderBy, order, filter, page, rows) => {
+    await fetch(
+      `http://localhost:5000/api/getSections?perPage=${rows}&page=${page}&orderBy=${orderBy}&order=${order}&filter=${filter}&userId=${localStorage.getItem(
+        "userId"
+      )}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    )
+      .then((response) => response.json())
+      .then((data) => setData(data));
+  };
+
+  const getCountOfSections = async (orderBy, filter) => {
+    await fetch(
+      `http://localhost:5000/api/getSectionsCount?orderBy=${orderBy}&filter=${filter}&userId=${localStorage.getItem(
+        "userId"
+      )}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    )
+      .then((response) => response.json())
+      .then((body) => setCountOfStudents(body._all));
+  };
 
   const tableTopBar = headCells.map((headCell) => {
     return (
@@ -55,9 +89,7 @@ const Sections = () => {
   const tableRow = (row) => {
     return (
       <TableRow>
-        <TableCell align="right">{row.id}</TableCell>
         <TableCell>{row.name}</TableCell>
-        <TableCell>{row.link}</TableCell>
       </TableRow>
     );
   };
@@ -76,17 +108,20 @@ const Sections = () => {
       orderBy !== label ? "desc" : order === "asc" ? "desc" : "asc";
     setOrder(orderTmp);
     if (orderBy !== label) setOrderBy(label);
-    //getSections(label, orderTmp, filter);
+    getSections(label, orderTmp, filter, page, rowsPerPage);
+    getCountOfSections(label, filter);
   };
 
   const handleTyping = (value) => {
     setFilter(value);
-    //getSections(orderBy, order, value);
+    getSections(orderBy, order, value, page, rowsPerPage);
+    getCountOfSections(orderBy, value);
   };
 
-  // useEffect(() => {
-  //   getSections(orderBy, order, filter);
-  // }, []);
+  useEffect(() => {
+    getSections(orderBy, order, filter, page, rowsPerPage);
+    getCountOfSections(orderBy, filter);
+  }, []);
 
   return (
     <Box className={classesLayout.mainContainer}>
@@ -118,7 +153,7 @@ const Sections = () => {
               }
             />
           </Box>
-          <TableContainer sx={{ maxHeight: "calc(100vh - 145px)" }}>
+          <TableContainer sx={{ height: "calc(100vh - 197px)" }}>
             <Table stickyHeader>
               <TableHead>
                 <TableRow>{tableTopBar}</TableRow>
@@ -126,6 +161,22 @@ const Sections = () => {
               <TableBody>{tableBody}</TableBody>
             </Table>
           </TableContainer>
+          <TablePagination
+            rowsPerPageOptions={[10, 25, 100]}
+            count={countOfStudents}
+            component="div"
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={(event, newPage) => {
+              setPage(newPage);
+              getSections(orderBy, order, filter, newPage, rowsPerPage);
+            }}
+            onRowsPerPageChange={(event) => {
+              setRowPerPage(event.target.value);
+              getSections(orderBy, order, filter, page, event.target.value);
+              setPage(0);
+            }}
+          />
         </Box>
       </Box>
     </Box>

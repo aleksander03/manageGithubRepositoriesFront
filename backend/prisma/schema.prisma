@@ -54,7 +54,7 @@ model sectionsToUsers {
 
 model organizationsToUsers {
   id             Int           @id @default(autoincrement())
-  organisation   organizations @relation(fields: [organizationId], references: [id])
+  organization   organizations @relation(fields: [organizationId], references: [id])
   user           users         @relation(fields: [userId], references: [id])
   organizationId Int
   userId         Int
@@ -68,7 +68,7 @@ model users {
   studentEmail         String?                @unique @db.VarChar(255)
   repositoriesToUsers  repositoriesToUsers[]
   sectionsToUsers      sectionsToUsers[]
-  organisationsToUsers organizationsToUsers[]
+  organizationsToUsers organizationsToUsers[]
   usersToRoles         usersToRoles[]
 }
 

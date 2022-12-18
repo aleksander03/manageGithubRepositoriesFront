@@ -20,7 +20,7 @@ async function main() {
         create: {
           role: {
             connect: {
-              role: "Profesor"
+              role: "Administrator"
             }
           }
         }
@@ -49,11 +49,11 @@ async function main() {
 
   await prisma.organizations.createMany({
     data: [
-      {name: `org1`, githubName: `org1`, link: `ogr1.git.com`},
-      {name: `org2`, githubName: `org2`, link: `ogr2.git.com`},
-      {name: `org3`, githubName: `org3`, link: `ogr3.git.com`},
-      {name: `org4`, githubName: `org4`, link: `ogr4.git.com`},
-      {name: `org5`, githubName: `org5`, link: `ogr5.git.com`}
+      {name: `ORG1`, githubName: `ORG1`, link: `ogr1.git.com`},
+      {name: `ORG2`, githubName: `ORG2`, link: `ogr2.git.com`},
+      {name: `ORG3`, githubName: `ORG3`, link: `ogr3.git.com`},
+      {name: `ORG4`, githubName: `ORG4`, link: `ogr4.git.com`},
+      {name: `ORG5`, githubName: `ORG5`, link: `ogr5.git.com`}
     ]
   })
 
@@ -121,9 +121,9 @@ async function main() {
                 },
               },
             },
-            organisationsToUsers: {
+            organizationsToUsers: {
               create: {
-                organisation: {
+                organization: {
                   connect: {
                     name: `ORGANIZACJA${i}`,
                   },

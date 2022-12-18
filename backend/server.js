@@ -16,7 +16,6 @@ app.post("/api/login", async (req, res) => {
   const clientId = process.env.REACT_APP_CLIENT_ID;
   const clientSecretId = process.env.REACT_APP_CLIENT_SECRET;
   const clientCode = req.body.code;
-  console.log(clientId);
 
   await request.post(
     {
@@ -38,7 +37,7 @@ app.post("/api/getUser", async (req, res) => {
 
   try {
     const response = await octokit.request("GET /user", {});
-    
+
     let user = await prisma.users.findUnique({
       where: { githubEmail: response.data.email },
     });
@@ -95,7 +94,6 @@ app.put("/api/addExistingOrganization", async (req, res) => {
     } else {
       res.sendStatus(204);
     }
-    
   } catch (error) {
     res.sendStatus(418);
   }
@@ -106,18 +104,364 @@ app.get("/api/getOrganizations", async (req, res) => {
     const orderBy = req.query.orderBy;
     const order = req.query.order;
     const filter = req.query.filter;
+    const userId = parseInt(req.query.userId);
+    const perPage = parseInt(req.query.perPage);
+    const page = parseInt(req.query.page);
+    const toSkip = perPage * page;
+
+    const isAdmin = await prisma.users.findFirst({
+      where: {
+        id: userId,
+        usersToRoles: {
+          some: {
+            role: {
+              role: "Administrator",
+            },
+          },
+        },
+      },
+    });
 
     const organizations = await prisma.organizations.findMany({
+      skip: toSkip,
+      take: perPage,
+      select: {
+        name: true,
+        link: true,
+      },
       where: {
-        name: {
+        [orderBy]: {
           contains: filter,
         },
+        ...(isAdmin
+          ? {}
+          : {
+              organizationsToUsers: {
+                some: {
+                  user: {
+                    id: userId,
+                  },
+                },
+              },
+            }),
       },
       orderBy: {
         [orderBy]: order,
       },
     });
+
     res.send(organizations);
+  } catch (error) {
+    res.send(error);
+  }
+});
+
+app.get("/api/getOrganizationsCount", async (req, res) => {
+  try {
+    const orderBy = req.query.orderBy;
+    const order = req.query.order;
+    const filter = req.query.filter;
+    const userId = parseInt(req.query.userId);
+
+    const isAdmin = await prisma.users.findFirst({
+      where: {
+        id: userId,
+        usersToRoles: {
+          some: {
+            role: {
+              role: "Administrator",
+            },
+          },
+        },
+      },
+    });
+
+    const organizations = await prisma.organizations.count({
+      select: {
+        _all: true,
+      },
+      where: {
+        [orderBy]: {
+          contains: filter,
+        },
+        ...(isAdmin
+          ? {}
+          : {
+              organizationsToUsers: {
+                some: {
+                  user: {
+                    id: userId,
+                  },
+                },
+              },
+            }),
+      },
+      orderBy: {
+        [orderBy]: order,
+      },
+    });
+
+    res.send(organizations);
+  } catch (error) {
+    res.send(error);
+  }
+});
+
+app.get("/api/getStudents", async (req, res) => {
+  try {
+    const orderBy = req.query.orderBy;
+    const order = req.query.order;
+    const filter = req.query.filter;
+    const userId = parseInt(req.query.userId);
+    const perPage = parseInt(req.query.perPage);
+    const page = parseInt(req.query.page);
+    const toSkip = perPage * page;
+
+    const isAdmin = await prisma.users.findFirst({
+      where: {
+        id: userId,
+        usersToRoles: {
+          some: {
+            role: {
+              role: "Administrator",
+            },
+          },
+        },
+      },
+    });
+
+    const orgIds = await prisma.organizations.findMany({
+      select: {
+        id: true,
+      },
+      where: {
+        organizationsToUsers: {
+          some: {
+            user: {
+              id: userId,
+            },
+          },
+        },
+      },
+    });
+
+    const students = await prisma.users.findMany({
+      skip: toSkip,
+      take: perPage,
+      select: {
+        name: true,
+        surname: true,
+        githubEmail: true,
+        studentEmail: true,
+      },
+      where: {
+        [orderBy]: {
+          contains: filter,
+        },
+        usersToRoles: {
+          some: {
+            role: {
+              role: "Student",
+            },
+          },
+        },
+        ...(isAdmin
+          ? {}
+          : {
+              organizationsToUsers: {
+                some: {
+                  organization: {
+                    OR: orgIds,
+                  },
+                },
+              },
+            }),
+      },
+      orderBy: {
+        [orderBy]: order,
+      },
+    });
+
+    res.send(students);
+  } catch (error) {
+    res.send(error);
+  }
+});
+
+app.get("/api/getStudentsCount", async (req, res) => {
+  try {
+    const orderBy = req.query.orderBy;
+    const filter = req.query.filter;
+    const userId = parseInt(req.query.userId);
+
+    const isAdmin = await prisma.users.findFirst({
+      where: {
+        id: userId,
+        usersToRoles: {
+          some: {
+            role: {
+              role: "Administrator",
+            },
+          },
+        },
+      },
+    });
+
+    const orgIds = await prisma.organizations.findMany({
+      select: {
+        id: true,
+      },
+      where: {
+        organizationsToUsers: {
+          some: {
+            user: {
+              id: userId,
+            },
+          },
+        },
+      },
+    });
+
+    const studentsCount = await prisma.users.count({
+      select: {
+        _all: true,
+      },
+      where: {
+        [orderBy]: {
+          contains: filter,
+        },
+        usersToRoles: {
+          some: {
+            role: {
+              role: "Student",
+            },
+          },
+        },
+        ...(isAdmin
+          ? {}
+          : {
+              organizationsToUsers: {
+                some: {
+                  organization: {
+                    OR: orgIds,
+                  },
+                },
+              },
+            }),
+      },
+    });
+
+    res.send(studentsCount);
+  } catch (error) {
+    res.send(error);
+  }
+});
+
+app.get("/api/getSections", async (req, res) => {
+  try {
+    const orderBy = req.query.orderBy;
+    const order = req.query.order;
+    const filter = req.query.filter;
+    const userId = parseInt(req.query.userId);
+    const perPage = parseInt(req.query.perPage);
+    const page = parseInt(req.query.page);
+    const toSkip = perPage * page;
+
+    const isAdmin = await prisma.users.findFirst({
+      select: {
+        name: true,
+      },
+      where: {
+        id: userId,
+        usersToRoles: {
+          some: {
+            role: {
+              role: "Administrator",
+            },
+          },
+        },
+      },
+    });
+
+    const sections = await prisma.sections.findMany({
+      skip: toSkip,
+      take: perPage,
+      where: {
+        [orderBy]: {
+          contains: filter,
+        },
+        ...(isAdmin
+          ? {}
+          : {
+              sectionsToUsers: {
+                some: {
+                  user: {
+                    id: userId,
+                  },
+                },
+              },
+            }),
+      },
+      orderBy: {
+        [orderBy]: order,
+      },
+    });
+
+    res.send(sections);
+  } catch (error) {
+    res.send(error);
+  }
+});
+
+app.get("/api/getSectionsCount", async (req, res) => {
+  try {
+    const orderBy = req.query.orderBy;
+    const order = req.query.order;
+    const filter = req.query.filter;
+    const userId = parseInt(req.query.userId);
+
+    const isAdmin = await prisma.users.findFirst({
+      select: {
+        name: true,
+      },
+      where: {
+        id: userId,
+        usersToRoles: {
+          some: {
+            role: {
+              role: "Administrator",
+            },
+          },
+        },
+      },
+    });
+
+    const sections = await prisma.sections.count({
+      select: {
+        _all: true,
+      },
+      where: {
+        [orderBy]: {
+          contains: filter,
+        },
+        ...(isAdmin
+          ? {}
+          : {
+              sectionsToUsers: {
+                some: {
+                  user: {
+                    id: userId,
+                  },
+                },
+              },
+            }),
+      },
+      orderBy: {
+        [orderBy]: order,
+      },
+    });
+
+    res.send(sections);
   } catch (error) {
     res.send(error);
   }

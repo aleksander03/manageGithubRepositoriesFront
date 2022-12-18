@@ -45,11 +45,11 @@ const Login = () => {
         return response.json();
       })
       .then((body) => {
-        localStorage.setItem("email", body.githubEmail);
-        localStorage.setItem("isProfessor", body.isProfessor);
+        localStorage.setItem("userId", body.id);
         localStorage.setItem("name", body.name);
-        localStorage.setItem("studentEmail", body.studentEmail);
         localStorage.setItem("surname", body.surname);
+        localStorage.setItem("githubEmail", body.githubEmail);
+        localStorage.setItem("studentEmail", body.studentEmail);
       });
 
     localStorage.setItem("loggedIn", true);
