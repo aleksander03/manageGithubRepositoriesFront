@@ -176,6 +176,7 @@ const StudentsList = () => {
               getStudents(orderBy, order, filter, page, event.target.value);
               setPage(0);
             }}
+            labelRowsPerPage="Wierszy na stronę"
           />
         </Box>
       </Box>

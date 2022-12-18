@@ -184,6 +184,7 @@ const Organizations = () => {
               );
               setPage(0);
             }}
+            labelRowsPerPage="Wierszy na stronę"
           />
         </Box>
       </Box>
