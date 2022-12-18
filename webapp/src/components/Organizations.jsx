@@ -22,6 +22,12 @@ import { useNavigate } from "react-router-dom";
 const headCells = [
   { id: "name", label: "Nazwa organizacji", numeric: false },
   { id: "link", label: "Link", numeric: false },
+  { id: "sections", label: "Ilość sekcji", numeric: true },
+  {
+    id: "organizationsToUsers",
+    label: "Ilość osób",
+    numeric: true,
+  },
 ];
 
 const Organizations = () => {
@@ -34,7 +40,7 @@ const Organizations = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowPerPage] = useState(10);
   const navigate = useNavigate();
-
+  console.log(data);
   const getOrganizations = async (orderBy, order, filter, page, rows) => {
     await fetch(
       `http://localhost:5000/api/getOrganizations?perPage=${rows}&page=${page}&orderBy=${orderBy}&order=${order}&filter=${filter}&userId=${localStorage.getItem(
@@ -76,13 +82,17 @@ const Organizations = () => {
         key={headCell.id}
         align={headCell.numeric ? "right" : "left"}
       >
-        <TableSortLabel
-          active={orderBy === headCell.id}
-          direction={order}
-          onClick={() => handleSort(headCell.id)}
-        >
-          {headCell.label}
-        </TableSortLabel>
+        {headCell.id === "name" || headCell.id === "link" ? (
+          <TableSortLabel
+            active={orderBy === headCell.id}
+            direction={order}
+            onClick={() => handleSort(headCell.id)}
+          >
+            {headCell.label}
+          </TableSortLabel>
+        ) : (
+          headCell.label
+        )}
       </TableCell>
     );
   });
@@ -92,6 +102,8 @@ const Organizations = () => {
       <TableRow>
         <TableCell>{row.name}</TableCell>
         <TableCell>{row.link}</TableCell>
+        <TableCell align="right">{row._count.sections}</TableCell>
+        <TableCell align="right">{row._count.organizationsToUsers}</TableCell>
       </TableRow>
     );
   };

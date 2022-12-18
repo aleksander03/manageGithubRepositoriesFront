@@ -21,7 +21,10 @@ import { useNavigate } from "react-router-dom";
 import classes from "./Sections.module.scss";
 import { useEffect } from "react";
 
-const headCells = [{ id: "name", label: "Nazwa", numeric: false }];
+const headCells = [
+  { id: "name", label: "Nazwa", numeric: false },
+  { id: "countOfUsers", label: "Ilość osób", numeric: true },
+];
 
 const Sections = () => {
   const siteName = "Sekcje";
@@ -75,13 +78,17 @@ const Sections = () => {
         key={headCell.id}
         align={headCell.numeric ? "right" : "left"}
       >
-        <TableSortLabel
-          active={orderBy === headCell.id}
-          direction={order}
-          onClick={() => handleSort(headCell.id)}
-        >
-          {headCell.label}
-        </TableSortLabel>
+        {headCell.id === "name" ? (
+          <TableSortLabel
+            active={orderBy === headCell.id}
+            direction={order}
+            onClick={() => handleSort(headCell.id)}
+          >
+            {headCell.label}
+          </TableSortLabel>
+        ) : (
+          headCell.label
+        )}
       </TableCell>
     );
   });
@@ -90,6 +97,7 @@ const Sections = () => {
     return (
       <TableRow>
         <TableCell>{row.name}</TableCell>
+        <TableCell align="right">{row._count.sectionsToUsers}</TableCell>
       </TableRow>
     );
   };
@@ -122,7 +130,7 @@ const Sections = () => {
     getSections(orderBy, order, filter, page, rowsPerPage);
     getCountOfSections(orderBy, filter);
   }, []);
-
+  console.log(data);
   return (
     <Box className={classesLayout.mainContainer}>
       <Box className={classesLayout.topBar}>

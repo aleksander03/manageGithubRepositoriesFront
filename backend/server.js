@@ -126,8 +126,15 @@ app.get("/api/getOrganizations", async (req, res) => {
       skip: toSkip,
       take: perPage,
       select: {
+        id: true,
         name: true,
         link: true,
+        _count: {
+          select: {
+            sections: true,
+            organizationsToUsers: true,
+          },
+        },
       },
       where: {
         [orderBy]: {
@@ -249,6 +256,7 @@ app.get("/api/getStudents", async (req, res) => {
       skip: toSkip,
       take: perPage,
       select: {
+        id: true,
         name: true,
         surname: true,
         githubEmail: true,
@@ -386,6 +394,15 @@ app.get("/api/getSections", async (req, res) => {
     const sections = await prisma.sections.findMany({
       skip: toSkip,
       take: perPage,
+      select: {
+        id: true,
+        name: true,
+        _count: {
+          select: {
+            sectionsToUsers: true,
+          }
+        }
+      },
       where: {
         [orderBy]: {
           contains: filter,
