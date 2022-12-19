@@ -4,11 +4,12 @@ const prisma = new PrismaClient();
 async function main() {
   await prisma.roles.createMany({
     data: [
-      {role: "Profesor"},
-      {role: "Student"},
-      {role: "Administrator"},
-    ]
-  })
+      { role: "Profesor" },
+      { role: "Student" },
+      { role: "Administrator" },
+      { role: "Kierownik" },
+    ],
+  });
 
   await prisma.users.create({
     data: {
@@ -20,13 +21,13 @@ async function main() {
         create: {
           role: {
             connect: {
-              role: "Administrator"
-            }
-          }
-        }
-      }
-    }
-  })
+              role: "Administrator",
+            },
+          },
+        },
+      },
+    },
+  });
 
   for (let i = 0; i < 10; i++) {
     await prisma.users.create({
@@ -38,24 +39,24 @@ async function main() {
           create: {
             role: {
               connect: {
-                role: "Profesor"
-              }
-            }
-          }
-        }
+                role: "Profesor",
+              },
+            },
+          },
+        },
       },
     });
   }
 
   await prisma.organizations.createMany({
     data: [
-      {name: `ORG1`, githubName: `ORG1`, link: `ogr1.git.com`},
-      {name: `ORG2`, githubName: `ORG2`, link: `ogr2.git.com`},
-      {name: `ORG3`, githubName: `ORG3`, link: `ogr3.git.com`},
-      {name: `ORG4`, githubName: `ORG4`, link: `ogr4.git.com`},
-      {name: `ORG5`, githubName: `ORG5`, link: `ogr5.git.com`}
-    ]
-  })
+      { name: `ORG1`, githubName: `ORG1`, link: `ogr1.git.com` },
+      { name: `ORG2`, githubName: `ORG2`, link: `ogr2.git.com` },
+      { name: `ORG3`, githubName: `ORG3`, link: `ogr3.git.com` },
+      { name: `ORG4`, githubName: `ORG4`, link: `ogr4.git.com` },
+      { name: `ORG5`, githubName: `ORG5`, link: `ogr5.git.com` },
+    ],
+  });
 
   for (let i = 0; i < 10; i++) {
     await prisma.organizations.create({
@@ -182,10 +183,12 @@ async function main() {
   }
 }
 
-main().then(async () => {
-  await prisma.$disconnect()
-}).catch(async (e) => {
-  console.error(e)
-  await prisma.$disconnect()
-  process.exit(1)
-})
+main()
+  .then(async () => {
+    await prisma.$disconnect();
+  })
+  .catch(async (e) => {
+    console.error(e);
+    await prisma.$disconnect();
+    process.exit(1);
+  });

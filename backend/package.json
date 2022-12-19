@@ -4,7 +4,7 @@
   "description": "Projekt inżynierski Polsl",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node --experimental-modules --es-module-specifier-resolution=node server.js",
     "prisma_migrate": "npx prisma migrate dev --name init",
     "prisma_generate": "npx prisma generate"
   },
