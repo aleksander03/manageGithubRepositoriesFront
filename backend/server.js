@@ -12,32 +12,34 @@ app.use(bodyParser.json());
 app.use(cors());
 
 app.post("/api/login", async (req, res) => {
-  const clientId = process.env.REACT_APP_CLIENT_ID;
-  const clientSecretId = process.env.REACT_APP_CLIENT_SECRET;
-  const clientCode = req.body.code;
+  try {
+    const clientId = process.env.REACT_APP_CLIENT_ID;
+    const clientSecretId = process.env.REACT_APP_CLIENT_SECRET;
+    const clientCode = req.body.code;
 
-  await request.post(
-    {
-      url: `https://github.com/login/oauth/access_token/?client_id=${clientId}&client_secret=${clientSecretId}&code=${clientCode}`,
-      headers: {
-        "User-Agent": "request",
-        Accept: "application/json",
+    await request.post(
+      {
+        url: `https://github.com/login/oauth/access_token/?client_id=${clientId}&client_secret=${clientSecretId}&code=${clientCode}`,
+        headers: {
+          "User-Agent": "request",
+          Accept: "application/json",
+        },
       },
-    },
-    function (error, response, body) {
-      res.send(body);
-    }
-  );
+      function (error, response, body) {
+        res.send(body);
+      }
+    );
+  } catch (error) {
+    res.send(error);
+  }
 });
 
 app.post("/api/getUser", async (req, res) => {
-  const token = req.body.token;
-  const octokit = new Octokit({ auth: token });
-
   try {
+    const token = req.body.token;
+    const octokit = new Octokit({ auth: token });
     const response = await octokit.request("GET /user", {});
-
-    let user = await client.findUserByGitHubEmail(response.data.githubEmail);
+    let user = await client.findUserByGitHubEmail(response.data.email);
 
     if (!user) {
       let name;
@@ -240,6 +242,11 @@ app.get("/api/getSectionsCount", async (req, res) => {
     res.send(error);
   }
 });
+
+app.get("/test", async (req, res) => {
+  const test = await client.test();
+  res.send(test)
+})
 
 app.get("/", function (req, res) {
   res.send("Get something");

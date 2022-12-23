@@ -1,0 +1,50 @@
+.mainContainer{
+    width: calc(80vw + 40px);
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+}
+
+.topContainer{
+    display: flex;
+    justify-content: space-between;
+}
+
+.topRightContainer{
+    display: inline-flex;
+    justify-content: flex-end;
+}
+
+.topLeftTextFieldInput{
+    height: 42.25px;
+}
+
+.topRightButton{
+    padding-right: 10px;
+}
+
+.contentContainer{
+    display: inline-flex;
+    justify-content: flex-start;
+    width: 100%;
+    padding-top: 25px;
+}
+
+.content{
+    padding-right: 100px;
+}
+
+.contentList{
+    max-height: calc(80vh - 75px - 10px - 42.25px - 25px);
+    overflow: auto;
+}
+
+// .category{
+//     padding-left: 44px;
+// }
+
+.addButton{
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 15px;
+}

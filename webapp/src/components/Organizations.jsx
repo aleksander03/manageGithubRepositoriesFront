@@ -25,7 +25,7 @@ const headCells = [
   { id: "sections", label: "Ilość sekcji", numeric: true },
   {
     id: "organizationsToUsers",
-    label: "Ilość osób",
+    label: "Ilość studentów",
     numeric: true,
   },
 ];
@@ -40,7 +40,6 @@ const Organizations = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowPerPage] = useState(10);
   const navigate = useNavigate();
-  console.log(data);
   const getOrganizations = async (orderBy, order, filter, page, rows) => {
     await fetch(
       `http://localhost:5000/api/getOrganizations?perPage=${rows}&page=${page}&orderBy=${orderBy}&order=${order}&filter=${filter}&userId=${localStorage.getItem(

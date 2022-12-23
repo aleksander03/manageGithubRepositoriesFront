@@ -6,7 +6,7 @@ import Archive from "./Archive";
 import Organizations from "./Organizations";
 import Sections from "./Sections";
 import StudentsList from "./StudentsList";
-import AddExistingOrganization from "./AddExistingOrganization";
+import SingleOrganization from "./SingleOrganization";
 
 const App = () => {
   return (
@@ -21,8 +21,13 @@ const App = () => {
         <Route exact path="/studentslist" element={<StudentsList />} />
         <Route
           exact
-          path="/addexistingorganization"
-          element={<AddExistingOrganization />}
+          path="/organizations/new"
+          element={<SingleOrganization />}
+        />
+        <Route
+          exact
+          path="/organizations/:id"
+          element={<SingleOrganization />}
         />
       </Routes>
     </BrowserRouter>

@@ -23,7 +23,7 @@ import { useEffect } from "react";
 
 const headCells = [
   { id: "name", label: "Nazwa", numeric: false },
-  { id: "countOfUsers", label: "Ilość osób", numeric: true },
+  { id: "countOfUsers", label: "Ilość studentów", numeric: true },
 ];
 
 const Sections = () => {

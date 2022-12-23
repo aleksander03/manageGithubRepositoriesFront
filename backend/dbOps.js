@@ -72,7 +72,19 @@ export const getOrganizations = async (
       _count: {
         select: {
           sections: true,
-          organizationsToUsers: true,
+          organizationsToUsers: {
+            where: {
+              user: {
+                usersToRoles: {
+                  some: {
+                    role: {
+                      role: "Student",
+                    }
+                  }
+                }
+              }
+            }
+          }
         },
       },
     },
@@ -227,7 +239,19 @@ export const getSections = async (
       name: true,
       _count: {
         select: {
-          sectionsToUsers: true,
+          sectionsToUsers: {
+            where: {
+              user: {
+                usersToRoles: {
+                  some: {
+                    role: {
+                      role: "Student"
+                    }
+                  }
+                }
+              }
+            }
+          }
         },
       },
     },
@@ -277,4 +301,50 @@ export const getSectionsCount = async (orderBy, filter, userId, isAdmin) => {
     },
   });
   return sectionsCount;
+};
+
+export const test = async () => {
+  const org = await prisma.organizations.findMany({
+    select: {
+      id: true,
+      _count: {
+        select: {
+          organizationsToUsers: true,
+        },
+      },
+    },
+    where: {
+      organizationsToUsers: {
+        some: {
+          user: {
+            usersToRoles: {
+              some: {
+                role: {
+                  role: "Student",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+  const orgToUsers = await prisma.organizationsToUsers.findMany({
+    select: {
+      userId: true,
+    },
+    where: {
+      user: {
+        usersToRoles: {
+          some: {
+            role: {
+              role: "Student",
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return org;
 };
