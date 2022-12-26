@@ -2,7 +2,6 @@
     width: calc(80vw + 40px);
     margin-left: auto;
     margin-right: auto;
-    margin-top: 10px;
 }
 
 .topContainer{
@@ -35,16 +34,13 @@
 }
 
 .contentList{
-    max-height: calc(80vh - 75px - 10px - 42.25px - 25px);
+    max-height: calc(80vh - 75px - 10px - 42.25px - 50px);
     overflow: auto;
 }
 
-// .category{
-//     padding-left: 44px;
-// }
-
 .addButton{
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     padding-top: 15px;
+    padding-left: 30px;
 }

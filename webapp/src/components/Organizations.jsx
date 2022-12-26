@@ -98,7 +98,7 @@ const Organizations = () => {
 
   const tableRow = (row) => {
     return (
-      <TableRow>
+      <TableRow hover onClick={() => navigate(`/organization/${row.id}`)}>
         <TableCell>{row.name}</TableCell>
         <TableCell>{row.link}</TableCell>
         <TableCell align="right">{row._count.sections}</TableCell>
@@ -151,7 +151,7 @@ const Organizations = () => {
             <Button
               variant="contained"
               size="large"
-              onClick={() => navigate("/addexistingorganization")}
+              onClick={() => navigate("/organizations/new")}
             >
               Dodaj istniejącą
             </Button>

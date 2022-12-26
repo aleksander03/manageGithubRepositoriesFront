@@ -95,7 +95,7 @@ const Sections = () => {
 
   const tableRow = (row) => {
     return (
-      <TableRow>
+      <TableRow hover>
         <TableCell>{row.name}</TableCell>
         <TableCell align="right">{row._count.sectionsToUsers}</TableCell>
       </TableRow>

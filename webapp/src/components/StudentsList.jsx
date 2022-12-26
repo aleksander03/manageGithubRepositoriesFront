@@ -92,7 +92,7 @@ const StudentsList = () => {
 
   const tableRow = (row) => {
     return (
-      <TableRow>
+      <TableRow hover>
         <TableCell>{row.name}</TableCell>
         <TableCell>{row.surname}</TableCell>
         <TableCell>{row.githubEmail}</TableCell>

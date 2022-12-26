@@ -26,7 +26,7 @@ const App = () => {
         />
         <Route
           exact
-          path="/organizations/:id"
+          path="/organization/:id"
           element={<SingleOrganization />}
         />
       </Routes>

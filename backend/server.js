@@ -62,39 +62,30 @@ app.post("/api/getUser", async (req, res) => {
   }
 });
 
-// app.put("/api/addExistingOrganization", async (req, res) => {
-//   const token = req.body.token;
-//   const org = req.body.organization;
-//   const name = req.body.name;
-//   const octokit = new Octokit({ auth: token });
+app.post("/github/findAndCreateOrganization", async (req, res) => {
+  try {
+    const token = req.body.token;
+    const org = req.body.org;
+    const octokit = new Octokit({ auth: token });
 
-//   try {
-//     const response = await octokit.request("GET /orgs/{org}", {
-//       org: org,
-//     });
-
-//     //issues_url - zmienna w response
-//     let organization = await prisma.organizations.findUnique({
-//       where: { link: response.data.url },
-//     });
-
-//     if (!organization) {
-//       organization = await prisma.organizations.create({
-//         data: {
-//           githubName: response.data.login.toUpperCase(),
-//           link: response.data.url,
-//           name: name ? name.toUpperCase() : response.data.login.toUpperCase(),
-//         },
-//       });
-
-//       res.sendStatus(201);
-//     } else {
-//       res.sendStatus(204);
-//     }
-//   } catch (error) {
-//     res.sendStatus(418);
-//   }
-// });
+    const response = await octokit.request("GET /orgs/{org}", {
+      org: org,
+    });
+    const isOrgExist = await client.checkIfOrgExist(response.data.login);
+    if (isOrgExist) {
+      res.sendStatus(204);
+    } else {
+      const organization = await client.addExistingOrganization(
+        response.data.login,
+        response.data.login,
+        response.data.html_url
+      );
+      res.send(organization);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+});
 
 app.get("/api/getOrganizations", async (req, res) => {
   try {
@@ -126,7 +117,6 @@ app.get("/api/getOrganizations", async (req, res) => {
 app.get("/api/getOrganizationsCount", async (req, res) => {
   try {
     const orderBy = req.query.orderBy;
-    const order = req.query.order;
     const filter = req.query.filter;
     const userId = parseInt(req.query.userId);
 
@@ -141,6 +131,23 @@ app.get("/api/getOrganizationsCount", async (req, res) => {
     res.send(organizationsCount);
   } catch (error) {
     res.send(error);
+  }
+});
+
+app.get("/api/getOrganization", async (req, res) => {
+  try {
+    const id = parseInt(req.query.id);
+    const userId = parseInt(req.query.userId);
+
+    const isAdmin = await client.isAdmin(userId);
+    const organization = await client.getOrganization(id, userId, isAdmin);
+    if (organization) {
+      res.send(organization);
+    } else {
+      res.sendStatus(204);
+    }
+  } catch (error) {
+    console.error(error);
   }
 });
 
@@ -245,8 +252,8 @@ app.get("/api/getSectionsCount", async (req, res) => {
 
 app.get("/test", async (req, res) => {
   const test = await client.test();
-  res.send(test)
-})
+  res.send(test);
+});
 
 app.get("/", function (req, res) {
   res.send("Get something");

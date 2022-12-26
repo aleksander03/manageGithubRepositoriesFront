@@ -79,12 +79,12 @@ export const getOrganizations = async (
                   some: {
                     role: {
                       role: "Student",
-                    }
-                  }
-                }
-              }
-            }
-          }
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       },
     },
@@ -245,13 +245,13 @@ export const getSections = async (
                 usersToRoles: {
                   some: {
                     role: {
-                      role: "Student"
-                    }
-                  }
-                }
-              }
-            }
-          }
+                      role: "Student",
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       },
     },
@@ -301,6 +301,67 @@ export const getSectionsCount = async (orderBy, filter, userId, isAdmin) => {
     },
   });
   return sectionsCount;
+};
+
+export const checkIfOrgExist = async (githubName) => {
+  const organization = await prisma.organizations.findUnique({
+    where: {
+      githubName: githubName,
+    },
+  });
+  return organization;
+};
+
+export const addExistingOrganization = async (name, githubName, link) => {
+  const organization = await prisma.organizations.create({
+    data: { githubName: githubName, name: name, link: link },
+  });
+  return organization;
+};
+
+export const getOrganization = async (id, userId, isAdmin) => {
+  const organization = await prisma.organizations.findUnique({
+    where: {
+      id: id,
+      ...(isAdmin
+        ? {}
+        : {
+            organizationsToUsers: {
+              some: {
+                user: {
+                  userId: userId,
+                },
+              },
+            },
+          }),
+    },
+    include: {
+      sections: true,
+    },
+  });
+
+  const professors = await prisma.users.findMany({
+    where: {
+      usersToRoles: {
+        some: {
+          role: {
+            role: {
+              not: "Student",
+            },
+          },
+        },
+      },
+      organizationsToUsers: {
+        some: {
+          organization: {
+            id: id,
+          },
+        },
+      },
+    },
+  });
+  const response = [organization, professors];
+  return response;
 };
 
 export const test = async () => {
