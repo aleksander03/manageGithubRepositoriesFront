@@ -83,7 +83,7 @@ app.post("/github/findAndCreateOrganization", async (req, res) => {
       res.send(organization);
     }
   } catch (error) {
-    console.error(error);
+    res.sendStatus(418);
   }
 });
 
@@ -148,6 +148,51 @@ app.get("/api/getOrganization", async (req, res) => {
     }
   } catch (error) {
     console.error(error);
+  }
+});
+
+app.get("/api/getAvailableProfessors", async (req, res) => {
+  try {
+    const orgId = parseInt(req.query.orgId);
+    const filter = req.query.filter;
+
+    const professors = await client.getAvailableProfessors(orgId, filter);
+    if (professors) res.send(professors);
+    else res.sendStatus(204);
+  } catch (error) {
+    res.send(418);
+  }
+});
+
+app.put("/api/addProfessorsToOrganization", async (req, res) => {
+  try {
+    const orgId = parseInt(req.query.orgId);
+    const professorId = parseInt(req.query.userId);
+
+    const addRelation = await client.addProfessorsToOrganization(
+      orgId,
+      professorId
+    );
+    if (addRelation) res.sendStatus(201);
+    else res.sendStatus(503);
+  } catch (error) {
+    res.send(error);
+  }
+});
+
+app.delete("/api/deleteProfessorsFromOrganization", async (req, res) => {
+  try {
+    const orgId = parseInt(req.query.orgId);
+    const professorId = parseInt(req.query.userId);
+
+    const deleteRelation = await client.deleteProfessorsFromOrganization(
+      orgId,
+      professorId
+    );
+    if (deleteRelation) res.sendStatus(200);
+    else res.sendStatus(503);
+  } catch (error) {
+    res.send(error);
   }
 });
 

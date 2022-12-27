@@ -364,6 +364,80 @@ export const getOrganization = async (id, userId, isAdmin) => {
   return response;
 };
 
+export const getAvailableProfessors = async (orgId, filter) => {
+  const professors = await prisma.users.findMany({
+    take: 20,
+    where: {
+      usersToRoles: {
+        some: {
+          role: {
+            role: {
+              not: "Student",
+            },
+          },
+        },
+      },
+      organizationsToUsers: {
+        every: {
+          organization: {
+            id: {
+              not: orgId,
+            },
+          },
+        },
+      },
+      OR: [
+        {
+          name: {
+            contains: filter,
+            mode: "insensitive",
+          },
+        },
+        {
+          surname: {
+            contains: filter,
+            mode: "insensitive",
+          },
+        },
+        {
+          githubEmail: { contains: filter, mode: "insensitive" },
+        },
+      ],
+    },
+  });
+
+  return professors;
+};
+
+export const addProfessorsToOrganization = async (orgId, professorId) => {
+  const relation = await prisma.organizationsToUsers.create({
+    data: {
+      organization: {
+        connect: {
+          id: orgId,
+        },
+      },
+      user: {
+        connect: {
+          id: professorId,
+        },
+      },
+    },
+  });
+
+  return relation;
+};
+
+export const deleteProfessorsFromOrganization = async (orgId, professorId) => {
+  const relation = await prisma.organizationsToUsers.deleteMany({
+    where: {
+      userId: professorId,
+      organizationId: orgId,
+    },
+  });
+  return relation;
+};
+
 export const test = async () => {
   const org = await prisma.organizations.findMany({
     select: {
