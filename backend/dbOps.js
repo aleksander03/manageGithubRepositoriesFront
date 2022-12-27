@@ -438,6 +438,46 @@ export const deleteProfessorsFromOrganization = async (orgId, professorId) => {
   return relation;
 };
 
+export const addSectionToOrg = async (orgId, professorId, name) => {
+  const section = await prisma.sections.create({
+    data: {
+      name: name,
+      sectionsToUsers: {
+        create: {
+          user: {
+            connect: {
+              id: professorId,
+            },
+          },
+        },
+      },
+      organization: {
+        connect: {
+          id: orgId,
+        },
+      },
+    },
+  });
+  return section;
+};
+
+export const deleteOrganization = async (orgId) => {
+  const orgToUsers = await prisma.organizationsToUsers.deleteMany({
+    where: {
+      organization: {
+        id: orgId,
+      },
+    },
+  });
+
+  const org = await prisma.organizations.delete({
+    where: {
+      id: orgId,
+    },
+  });
+  return org;
+};
+
 export const test = async () => {
   const org = await prisma.organizations.findMany({
     select: {

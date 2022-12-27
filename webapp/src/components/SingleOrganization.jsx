@@ -1,7 +1,9 @@
 import {
+  Alert,
   Box,
   Button,
   Checkbox,
+  Collapse,
   Dialog,
   DialogActions,
   DialogContent,
@@ -24,9 +26,9 @@ import classesLayout from "./Layout.module.scss";
 import classes from "./SingleOrganization.module.scss";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import DeleteIcon from "@mui/icons-material/Delete";
 import FindInPageIcon from "@mui/icons-material/FindInPage";
 import { useEffect } from "react";
+import CloseIcon from "@mui/icons-material/Close";
 
 const SingleOrganization = () => {
   const urlParams = useParams();
@@ -38,11 +40,11 @@ const SingleOrganization = () => {
   const [orgName, setOrgName] = useState(organization.name);
   const [isAllProfessors, setIsAllProfessors] = useState(false);
   const [isAllSections, setIsAllSections] = useState(false);
-  const [openProfessorsDialog, setOpenProfessorsDialog] = useState(false);
-  const [openSectionsDialog, setOpenSectionsDialog] = useState(false);
   const [filterProfessors, setFilterProfessors] = useState("");
   const [availableProfessors, setAvailableProfessors] = useState([]);
-  const [deleteAlert, setDeleteAlert] = useState(false);
+  const [newSectionName, setNewSectionName] = useState("");
+  const [alert, setAlert] = useState(0);
+  const [dialog, setDialog] = useState(0);
   const navigate = useNavigate();
 
   const professorsList =
@@ -186,22 +188,42 @@ const SingleOrganization = () => {
     }
   };
 
-  const handleOpenProfessorsDialog = () => {
-    setOpenProfessorsDialog(true);
-    getAvailableProfessors();
+  // const handleOpenProfessorsDialog = () => {
+  //   setOpenProfessorsDialog(true);
+  //   getAvailableProfessors();
+  // };
+
+  // const handleCloseProfessorsDialog = () => {
+  //   setOpenProfessorsDialog(false);
+  //   setFilterProfessors("");
+  // };
+
+  // const handleOpenSectionsDialog = () => {
+  //   setOpenSectionsDialog(true);
+  // };
+
+  // const handleCloseSectionsDialog = () => {
+  //   setOpenSectionsDialog(false);
+  //   setNewSectionName("");
+  // };
+
+  const handleOpenDialog = (id) => {
+    if (id === 1) {
+      getAvailableProfessors();
+    } else if (id === 2) {
+    } else if (id === 3) {
+    }
+    setDialog(id);
   };
 
-  const handleCloseProfessorsDialog = () => {
-    setOpenProfessorsDialog(false);
-    setFilterProfessors("");
-  };
-
-  const handleOpenSectionsDialog = () => {
-    setOpenSectionsDialog(true);
-  };
-
-  const handleCloseSectionsDialog = () => {
-    setOpenSectionsDialog(false);
+  const handleCloseDialog = () => {
+    if (dialog === 1) {
+      setFilterProfessors("");
+    } else if (dialog === 2) {
+    } else if (dialog === 3) {
+      setNewSectionName("");
+    }
+    setDialog(0);
   };
 
   const getAvailableProfessors = async (filter) => {
@@ -239,14 +261,14 @@ const SingleOrganization = () => {
   };
 
   const addSelectedProfessorsToOrg = () => {
-    setOpenProfessorsDialog(false);
+    setDialog(0);
     const selectedProfessors = availableProfessors.map((professor) => {
       if (professor.isSelected) return professor;
       return [];
     });
     if (selectedProfessors) {
-      selectedProfessors.forEach(async (professor) => {
-        const response = await fetch(
+      selectedProfessors.forEach((professor) => {
+        const response = fetch(
           `http://localhost:5000/api/addProfessorsToOrganization?orgId=${editedOrgId}&userId=${professor.id}`,
           {
             method: "PUT",
@@ -298,8 +320,8 @@ const SingleOrganization = () => {
       return [];
     });
     deletedProfessors.length > 0
-      ? deletedProfessors.forEach(async (professor) => {
-          const response = await fetch(
+      ? deletedProfessors.forEach((professor) => {
+          const response = fetch(
             `http://localhost:5000/api/deleteProfessorsFromOrganization?orgId=${editedOrgId}&userId=${professor.id}`,
             {
               method: "DELETE",
@@ -311,13 +333,43 @@ const SingleOrganization = () => {
           );
         })
       : alert("Musisz zaznaczyć cokolwiek!");
-    setDeleteAlert(false);
+    setDialog(0);
+    setIsAllProfessors(false);
     getOrganization();
   };
 
-  // const getSections = async () => {
+  const addSection = async () => {
+    handleCloseDialog();
+    const response = await fetch(
+      `http://localhost:5000/api/addSectionToOrg?orgId=${editedOrgId}&userId=${localStorage.getItem(
+        "userId"
+      )}&name=${newSectionName}`,
+      {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    getOrganization();
+  };
 
-  // }
+  const deleteOrganization = async () => {
+    const response = await fetch(
+      `http://localhost:5000/api/deleteOrganization?orgId=${editedOrgId}&userId=${localStorage.getItem(
+        "userId"
+      )}`,
+      {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (response.status === 200) navigate("/organizations");
+  };
 
   // const changeOrgLocalName = (newName) => {
 
@@ -331,10 +383,6 @@ const SingleOrganization = () => {
 
   // }
 
-  // const addSections = () => {
-
-  // }
-
   // const createIssue = () => {
 
   // }
@@ -342,6 +390,88 @@ const SingleOrganization = () => {
   useEffect(() => {
     getOrganization();
   }, []);
+
+  const dialogScreen =
+    dialog === 1 ? (
+      <>
+        <DialogTitle>Dodawanie profesorów do organizacji</DialogTitle>
+        <DialogContent>
+          <DialogContentText color="error">
+            Uwaga! Użytkownik dodawany do organizacji, powinien zostać ręcznie
+            zaproszony do organizacji z poziomu platformy GitHub!
+          </DialogContentText>
+          <TextField
+            margin="dense"
+            label="Filtr"
+            type="search"
+            fullWidth
+            variant="standard"
+            value={filterProfessors}
+            onChange={(event) => {
+              setFilterProfessors(event.target.value);
+              getAvailableProfessors(event.target.value);
+            }}
+          />
+          <List dense>{availableProfessorsList}</List>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Anuluj</Button>
+          <Button onClick={addSelectedProfessorsToOrg}>Dodaj</Button>
+        </DialogActions>
+      </>
+    ) : dialog === 2 ? (
+      <>
+        <DialogTitle color="error">Usuwanie użytkowników</DialogTitle>
+        <DialogContent>
+          <DialogContentText color="error">
+            Jesteś pewien, że chcesz usunąć zaznaczonych użytkowników z
+            organizacji?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Nie</Button>
+          <Button onClick={deleteSelectedProfessors}>Tak</Button>
+        </DialogActions>
+      </>
+    ) : dialog === 3 ? (
+      <>
+        <DialogTitle>Tworzenie nowej sekcji</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Nazwa sekcji"
+            type="search"
+            fullWidth
+            variant="standard"
+            value={newSectionName}
+            onChange={(event) => {
+              setNewSectionName(event.target.value);
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Anuluj</Button>
+          <Button onClick={addSection}>Dodaj</Button>
+        </DialogActions>
+      </>
+    ) : dialog === 4 ? (
+      <>
+        <DialogTitle color="error">Usuwanie organizacji</DialogTitle>
+        <DialogContent>
+          <DialogContentText color="error">
+            Jesteś pewien, że chcesz usunąć organizację? Proces ten będzie
+            nieodwracalny
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Nie</Button>
+          <Button onClick={deleteOrganization}>Tak</Button>
+        </DialogActions>
+      </>
+    ) : (
+      <></>
+    );
 
   return (
     <Box className={classesLayout.mainContainer}>
@@ -378,7 +508,12 @@ const SingleOrganization = () => {
                     ARCHIWIZUJ
                   </Button>
                 </Box>
-                <Button variant="contained" size="large" color="error">
+                <Button
+                  variant="contained"
+                  size="large"
+                  color="error"
+                  onClick={() => handleOpenDialog(4)}
+                >
                   USUŃ
                 </Button>
               </Box>
@@ -473,7 +608,7 @@ const SingleOrganization = () => {
                   <Button
                     variant="contained"
                     size="large"
-                    onClick={handleOpenProfessorsDialog}
+                    onClick={() => handleOpenDialog(1)}
                   >
                     Dodaj
                   </Button>
@@ -481,7 +616,7 @@ const SingleOrganization = () => {
                     variant="contained"
                     size="large"
                     color="error"
-                    onClick={() => setDeleteAlert(true)}
+                    onClick={() => handleOpenDialog(2)}
                   >
                     USUŃ
                   </Button>
@@ -515,7 +650,7 @@ const SingleOrganization = () => {
                   <Button
                     variant="contained"
                     size="large"
-                    onClick={handleOpenSectionsDialog}
+                    onClick={() => handleOpenDialog(3)}
                   >
                     Dodaj
                   </Button>
@@ -529,53 +664,11 @@ const SingleOrganization = () => {
         </Box>
       </Box>
       <Dialog
-        open={openProfessorsDialog}
-        onClose={handleCloseProfessorsDialog}
+        open={dialog}
+        onClose={handleCloseDialog}
         PaperProps={{ style: { backgroundColor: "#d9d9d9" } }}
       >
-        <DialogTitle>Dodawanie profesorów do organizacji</DialogTitle>
-        <DialogContent>
-          <DialogContentText color="error">
-            Uwaga! Użytkownik dodawany do organizacji, powinien zostać ręcznie
-            zaproszony do organizacji z poziomu platformy GitHub!
-          </DialogContentText>
-          <TextField
-            margin="dense"
-            label="Filtr"
-            type="search"
-            fullWidth
-            variant="standard"
-            value={filterProfessors}
-            onChange={(event) => {
-              setFilterProfessors(event.target.value);
-              getAvailableProfessors(event.target.value);
-            }}
-          />
-          <List dense>{availableProfessorsList}</List>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseProfessorsDialog}>Anuluj</Button>
-          <Button onClick={addSelectedProfessorsToOrg}>Dodaj</Button>
-        </DialogActions>
-      </Dialog>
-      <Dialog
-        open={deleteAlert}
-        onClose={() => setDeleteAlert(false)}
-        PaperProps={{ style: { backgroundColor: "#d9d9d9" } }}
-      >
-        <DialogTitle style={{ cursor: "move" }} color="error">
-          Usuwanie użytkowników
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText color="error">
-            Jesteś pewien, że chcesz usunąć zaznaczonych użytkowników z
-            organizacji?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteAlert(false)}>Nie</Button>
-          <Button onClick={deleteSelectedProfessors}>Tak</Button>
-        </DialogActions>
+        {dialogScreen}
       </Dialog>
     </Box>
   );

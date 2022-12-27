@@ -151,6 +151,22 @@ app.get("/api/getOrganization", async (req, res) => {
   }
 });
 
+app.delete("/api/deleteOrganization", async (req, res) => {
+  try {
+    const orgId = parseInt(req.query.orgId);
+    const userId = parseInt(req.query.userId);
+
+    const isAdmin = await client.isAdmin(userId);
+    if (isAdmin) {
+      const org = await client.deleteOrganization(orgId);
+      if (org) res.sendStatus(200);
+      else res.sendStatus(418);
+    } else res.sendStatus(401);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
 app.get("/api/getAvailableProfessors", async (req, res) => {
   try {
     const orgId = parseInt(req.query.orgId);
@@ -190,6 +206,20 @@ app.delete("/api/deleteProfessorsFromOrganization", async (req, res) => {
       professorId
     );
     if (deleteRelation) res.sendStatus(200);
+    else res.sendStatus(503);
+  } catch (error) {
+    res.send(error);
+  }
+});
+
+app.put("/api/addSectionToOrg", async (req, res) => {
+  try {
+    const orgId = parseInt(req.query.orgId);
+    const professorId = parseInt(req.query.userId);
+    const name = req.query.name;
+
+    const section = await client.addSectionToOrg(orgId, professorId, name);
+    if (section) res.send(section);
     else res.sendStatus(503);
   } catch (error) {
     res.send(error);

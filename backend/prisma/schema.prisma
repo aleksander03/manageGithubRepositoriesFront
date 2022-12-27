@@ -21,9 +21,9 @@ model repositories {
 
 model sections {
   id              Int               @id @default(autoincrement())
-  name            String            @unique @db.VarChar(255)
+  name            String            @db.VarChar(255)
   repositories    repositories[]
-  organization    organizations     @relation(fields: [organizationId], references: [id])
+  organization    organizations     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   organizationId  Int
   sectionsToUsers sectionsToUsers[]
 }
@@ -47,7 +47,7 @@ model repositoriesToUsers {
 
 model sectionsToUsers {
   id        Int      @id @default(autoincrement())
-  section   sections @relation(fields: [sectionId], references: [id])
+  section   sections @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   user      users    @relation(fields: [userId], references: [id])
   sectionId Int
   userId    Int

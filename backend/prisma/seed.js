@@ -117,7 +117,7 @@ async function main() {
               create: {
                 section: {
                   connect: {
-                    name: `sekcja${i}${j}`,
+                    id: (i+1)*(j+1)
                   },
                 },
               },
@@ -138,7 +138,7 @@ async function main() {
                     link: `student-repository${i}${j}${k}`,
                     section: {
                       connect: {
-                        name: `sekcja${i}${j}`,
+                        id: (i+1)*(j+1),
                       },
                     },
                   },
@@ -173,7 +173,7 @@ async function main() {
             link: `utracone${i}${j}${k}`,
             section: {
               connect: {
-                name: `sekcja${i}${j}`,
+                id: (i+1)*(j+1),
               },
             },
           },
