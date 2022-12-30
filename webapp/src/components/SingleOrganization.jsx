@@ -1,9 +1,7 @@
 import {
-  Alert,
   Box,
   Button,
   Checkbox,
-  Collapse,
   Dialog,
   DialogActions,
   DialogContent,
@@ -28,12 +26,12 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import FindInPageIcon from "@mui/icons-material/FindInPage";
 import { useEffect } from "react";
-import CloseIcon from "@mui/icons-material/Close";
 
 const SingleOrganization = () => {
+  const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
   const urlParams = useParams();
   const editedOrgId = urlParams.id;
-  const siteName = "Dodawanie organizacji";
+  const siteName = "Edycja organizacji";
   const [organization, setOrganization] = useState({});
   const [professors, setProfessors] = useState([]);
   const [sections, setSections] = useState([]);
@@ -78,7 +76,9 @@ const SingleOrganization = () => {
             key={section.id}
             secondaryAction={
               <IconButton edge="right" aria-label="sectionPage">
-                <FindInPageIcon />
+                <FindInPageIcon
+                  onClick={() => navigate(`/section/${section.id}`)}
+                />
               </IconButton>
             }
           >
@@ -188,25 +188,6 @@ const SingleOrganization = () => {
     }
   };
 
-  // const handleOpenProfessorsDialog = () => {
-  //   setOpenProfessorsDialog(true);
-  //   getAvailableProfessors();
-  // };
-
-  // const handleCloseProfessorsDialog = () => {
-  //   setOpenProfessorsDialog(false);
-  //   setFilterProfessors("");
-  // };
-
-  // const handleOpenSectionsDialog = () => {
-  //   setOpenSectionsDialog(true);
-  // };
-
-  // const handleCloseSectionsDialog = () => {
-  //   setOpenSectionsDialog(false);
-  //   setNewSectionName("");
-  // };
-
   const handleOpenDialog = (id) => {
     if (id === 1) {
       getAvailableProfessors();
@@ -262,23 +243,27 @@ const SingleOrganization = () => {
 
   const addSelectedProfessorsToOrg = () => {
     setDialog(0);
-    const selectedProfessors = availableProfessors.map((professor) => {
-      if (professor.isSelected) return professor;
-      return [];
-    });
+    const selectedProfessors = [];
+    availableProfessors.map(
+      (professor) =>
+        professor.isSelected && selectedProfessors.push(professor.id)
+    );
+
     if (selectedProfessors) {
-      selectedProfessors.forEach((professor) => {
-        const response = fetch(
-          `http://localhost:5000/api/addProfessorsToOrganization?orgId=${editedOrgId}&userId=${professor.id}`,
-          {
-            method: "PUT",
-            headers: {
-              Accept: "application/json",
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      });
+      const response = fetch(
+        `http://localhost:5000/api/addProfessorsToOrganization`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            orgId: editedOrgId,
+            userId: selectedProfessors,
+          }),
+        }
+      );
       getOrganization();
     }
   };
@@ -315,22 +300,22 @@ const SingleOrganization = () => {
       : null;
 
   const deleteSelectedProfessors = () => {
-    const deletedProfessors = professors.map((professor) => {
-      if (professor.isSelected) return professor;
-      return [];
-    });
+    const deletedProfessors = [];
+    professors.map(
+      (professor) =>
+        professor.isSelected && deletedProfessors.push(professor.id)
+    );
     deletedProfessors.length > 0
-      ? deletedProfessors.forEach((professor) => {
-          const response = fetch(
-            `http://localhost:5000/api/deleteProfessorsFromOrganization?orgId=${editedOrgId}&userId=${professor.id}`,
-            {
-              method: "DELETE",
-              headers: {
-                Accept: "application/json",
-                "Content-Type": "application/json",
-              },
-            }
-          );
+      ? fetch(`http://localhost:5000/api/deleteProfessorsFromOrganization`, {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            orgId: editedOrgId,
+            userId: deletedProfessors,
+          }),
         })
       : alert("Musisz zaznaczyć cokolwiek!");
     setDialog(0);
@@ -520,7 +505,11 @@ const SingleOrganization = () => {
             </Box>
             <Box className={classes.contentContainer}>
               <Box className={classes.content}>
-                <List dense>
+                <List
+                  dense
+                  sx={{ maxWidth: "30vw" }}
+                  className={classes.contentList}
+                >
                   <ListItem>
                     <ListItemButton role={undefined} dense>
                       <ListItemText
@@ -581,7 +570,11 @@ const SingleOrganization = () => {
                 </List>
               </Box>
               <Box className={classes.content}>
-                <List dense>
+                <List
+                  dense
+                  sx={{ maxWidth: "30vw" }}
+                  className={classes.contentList}
+                >
                   <ListItem>
                     <ListItemButton
                       role={undefined}
@@ -601,7 +594,11 @@ const SingleOrganization = () => {
                     </ListItemButton>
                   </ListItem>
                 </List>
-                <List dense className={classes.contentList}>
+                <List
+                  dense
+                  sx={{ maxWidth: "30vw" }}
+                  className={classes.contentList}
+                >
                   {professorsList}
                 </List>
                 <Box className={classes.addButton}>
@@ -623,7 +620,11 @@ const SingleOrganization = () => {
                 </Box>
               </Box>
               <Box className={classes.content}>
-                <List dense>
+                <List
+                  dense
+                  sx={{ maxWidth: "30vw" }}
+                  className={classes.contentList}
+                >
                   <ListItem>
                     <ListItemButton
                       role={undefined}
@@ -643,7 +644,11 @@ const SingleOrganization = () => {
                     </ListItemButton>
                   </ListItem>
                 </List>
-                <List className={classes.contentList} dense>
+                <List
+                  dense
+                  sx={{ maxWidth: "30vw" }}
+                  className={classes.contentList}
+                >
                   {sectionsList}
                 </List>
                 <Box className={classes.addButton}>

@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import {v4 as uuidv4} from 'uuid';
 const prisma = new PrismaClient();
 
 async function main() {
@@ -13,10 +14,12 @@ async function main() {
 
   await prisma.users.create({
     data: {
+      id: uuidv4(),
       name: "Aleksander",
       surname: "Uljaniwski",
       githubEmail: "indoras@o2.pl",
       studentEmail: "alekulj284@student.polsl.pl",
+      approved: true,
       usersToRoles: {
         create: {
           role: {
@@ -32,9 +35,11 @@ async function main() {
   for (let i = 0; i < 10; i++) {
     await prisma.users.create({
       data: {
+        id: uuidv4(),
         name: `Profesor${i}`,
         surname: `Nowak${i}`,
         githubEmail: `profesor${i}@git.com`,
+        approved: true,
         usersToRoles: {
           create: {
             role: {
@@ -100,10 +105,12 @@ async function main() {
       for (let k = 0; k < 20; k++) {
         await prisma.users.create({
           data: {
+            id: uuidv4(),
             name: `Student${i}${j}${k}`,
             surname: `Kowalski${i}${j}${k}`,
             githubEmail: `Student${i}${j}${k}@git.com`,
             studentEmail: `Student${i}${j}${k}@polsl.com`,
+            approved: true,
             usersToRoles: {
               create: {
                 role: {

@@ -7,6 +7,7 @@ import Organizations from "./Organizations";
 import Sections from "./Sections";
 import StudentsList from "./StudentsList";
 import SingleOrganization from "./SingleOrganization";
+import SingleSection from "./SingleSection";
 
 const App = () => {
   return (
@@ -21,14 +22,10 @@ const App = () => {
         <Route exact path="/studentslist" element={<StudentsList />} />
         <Route
           exact
-          path="/organizations/new"
-          element={<SingleOrganization />}
-        />
-        <Route
-          exact
           path="/organization/:id"
           element={<SingleOrganization />}
         />
+        <Route exact path="/section/:id" element={<SingleSection />} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,0 +1,47 @@
+.mainContainer{
+    width: calc(80vw + 40px);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.topContainer{
+    display: flex;
+    justify-content: space-between;
+}
+
+.topRightContainer{
+    display: inline-flex;
+    justify-content: flex-end;
+}
+
+.topLeftTextFieldInput{
+    height: 42.25px;
+}
+
+.topRightButton{
+    padding-right: 10px;
+}
+
+.contentContainer{
+    display: inline-flex;
+    justify-content: flex-start;
+    width: 100%;
+    padding-top: 25px;
+}
+
+.content{
+    padding-right: 75px;
+    min-width: 300px;
+}
+
+.contentList{
+    max-height: calc(80vh - 75px - 10px - 42.25px - 50px);
+    overflow: auto;
+}
+
+.addButton{
+    display: flex;
+    justify-content: space-between;
+    padding-top: 15px;
+    padding-left: 30px;
+}

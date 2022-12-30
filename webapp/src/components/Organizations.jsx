@@ -39,6 +39,7 @@ const headCells = [
 ];
 
 const Organizations = () => {
+  const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
   const siteName = "Organizacje";
   const [data, setData] = useState([]);
   const [countOfStudents, setCountOfStudents] = useState();

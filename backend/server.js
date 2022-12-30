@@ -92,7 +92,7 @@ app.get("/api/getOrganizations", async (req, res) => {
     const orderBy = req.query.orderBy;
     const order = req.query.order;
     const filter = req.query.filter;
-    const userId = parseInt(req.query.userId);
+    const userId = req.query.userId;
     const perPage = parseInt(req.query.perPage);
     const page = parseInt(req.query.page);
     const toSkip = perPage * page;
@@ -118,7 +118,7 @@ app.get("/api/getOrganizationsCount", async (req, res) => {
   try {
     const orderBy = req.query.orderBy;
     const filter = req.query.filter;
-    const userId = parseInt(req.query.userId);
+    const userId = req.query.userId;
 
     const isAdmin = await client.isAdmin(userId);
     const organizationsCount = await client.getOrganizationsCount(
@@ -137,7 +137,7 @@ app.get("/api/getOrganizationsCount", async (req, res) => {
 app.get("/api/getOrganization", async (req, res) => {
   try {
     const id = parseInt(req.query.id);
-    const userId = parseInt(req.query.userId);
+    const userId = req.query.userId;
 
     const isAdmin = await client.isAdmin(userId);
     const organization = await client.getOrganization(id, userId, isAdmin);
@@ -154,7 +154,7 @@ app.get("/api/getOrganization", async (req, res) => {
 app.delete("/api/deleteOrganization", async (req, res) => {
   try {
     const orgId = parseInt(req.query.orgId);
-    const userId = parseInt(req.query.userId);
+    const userId = req.query.userId;
 
     const isAdmin = await client.isAdmin(userId);
     if (isAdmin) {
@@ -180,10 +180,10 @@ app.get("/api/getAvailableProfessors", async (req, res) => {
   }
 });
 
-app.put("/api/addProfessorsToOrganization", async (req, res) => {
+app.post("/api/addProfessorsToOrganization", async (req, res) => {
   try {
-    const orgId = parseInt(req.query.orgId);
-    const professorId = parseInt(req.query.userId);
+    const orgId = parseInt(req.body.orgId);
+    const professorId = req.body.userId;
 
     const addRelation = await client.addProfessorsToOrganization(
       orgId,
@@ -198,8 +198,8 @@ app.put("/api/addProfessorsToOrganization", async (req, res) => {
 
 app.delete("/api/deleteProfessorsFromOrganization", async (req, res) => {
   try {
-    const orgId = parseInt(req.query.orgId);
-    const professorId = parseInt(req.query.userId);
+    const orgId = parseInt(req.body.orgId);
+    const professorId = req.body.userId;
 
     const deleteRelation = await client.deleteProfessorsFromOrganization(
       orgId,
@@ -212,10 +212,61 @@ app.delete("/api/deleteProfessorsFromOrganization", async (req, res) => {
   }
 });
 
+app.post("/github/addStudentsToSection", async (req, res) => {
+  try{
+    
+  }catch(error){
+    console.error(error)
+  }
+})
+
+app.get("/api/generateCode", async (req, res) => {
+  try{
+    const userId = req.query.userId;
+    const organizationId = parseInt(req.query.orgId);
+    const sectionId = parseInt(req.query.sectionId);
+
+    const code = await client.generateCode(userId, organizationId, sectionId);
+    if(code) res.send(code);
+    else res.sendStatus(403);
+  }catch(error){
+    console.log(error)
+  }
+})
+
+app.get("/api/checkIsCodeExpired", async (req, res) => {
+  try{
+    const code = req.query.code;
+
+    const isCodeExpired = await client.checkIsCodeExpired(code);
+    if(isCodeExpired) 
+      if(isCodeExpired.expireDate > new Date()) res.sendStatus(200)
+    
+    else res.sendStatus(418);
+  }catch(error){
+    console.log(error)
+  }
+})
+
+app.get("/api/getSection", async (req, res) => {
+  try {
+    const sectionId = parseInt(req.query.sectionId);
+    const userId = req.query.userId;
+
+    const isAdmin = await client.isAdmin(userId);
+
+    const section = await client.getSection(sectionId, userId, isAdmin);
+    if (section) res.send(section);
+    else res.sendStatus(404);
+  } catch (error) {
+    console.log(error);
+  }
+});
+
 app.put("/api/addSectionToOrg", async (req, res) => {
   try {
     const orgId = parseInt(req.query.orgId);
-    const professorId = parseInt(req.query.userId);
+    const professorId = req.query.userId;
     const name = req.query.name;
 
     const section = await client.addSectionToOrg(orgId, professorId, name);
@@ -231,7 +282,7 @@ app.get("/api/getStudents", async (req, res) => {
     const orderBy = req.query.orderBy;
     const order = req.query.order;
     const filter = req.query.filter;
-    const userId = parseInt(req.query.userId);
+    const userId = req.query.userId;
     const perPage = parseInt(req.query.perPage);
     const page = parseInt(req.query.page);
     const toSkip = perPage * page;
@@ -259,7 +310,7 @@ app.get("/api/getStudentsCount", async (req, res) => {
   try {
     const orderBy = req.query.orderBy;
     const filter = req.query.filter;
-    const userId = parseInt(req.query.userId);
+    const userId = req.query.userId;
 
     const isAdmin = await client.isAdmin(userId);
     const orgsIds = isAdmin ? [] : await client.orgsIdsForUser(userId);
@@ -282,7 +333,7 @@ app.get("/api/getSections", async (req, res) => {
     const orderBy = req.query.orderBy;
     const order = req.query.order;
     const filter = req.query.filter;
-    const userId = parseInt(req.query.userId);
+    const userId = req.query.userId;
     const perPage = parseInt(req.query.perPage);
     const page = parseInt(req.query.page);
     const toSkip = perPage * page;
@@ -309,7 +360,7 @@ app.get("/api/getSectionsCount", async (req, res) => {
     const orderBy = req.query.orderBy;
     const order = req.query.order;
     const filter = req.query.filter;
-    const userId = parseInt(req.query.userId);
+    const userId = req.query.userId;
 
     const isAdmin = await client.isAdmin(userId);
     const sectionsCount = await client.getSectionsCount(

@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
+import {v4 as uuidv4} from 'uuid';
 
 export const isAdmin = async (userId) => {
   const isAdmin = await prisma.users.findFirst({
@@ -410,32 +411,37 @@ export const getAvailableProfessors = async (orgId, filter) => {
 };
 
 export const addProfessorsToOrganization = async (orgId, professorId) => {
-  const relation = await prisma.organizationsToUsers.create({
-    data: {
-      organization: {
-        connect: {
-          id: orgId,
+  professorId.map(async (professor) => {
+    await prisma.organizationsToUsers.create({
+      data: {
+        organization: {
+          connect: {
+            id: orgId,
+          },
+        },
+        user: {
+          connect: {
+            id: professor,
+          },
         },
       },
-      user: {
-        connect: {
-          id: professorId,
-        },
-      },
-    },
+    });
   });
 
-  return relation;
+  return true;
 };
 
 export const deleteProfessorsFromOrganization = async (orgId, professorId) => {
-  const relation = await prisma.organizationsToUsers.deleteMany({
-    where: {
-      userId: professorId,
-      organizationId: orgId,
-    },
+  professorId.map(async (professor) => {
+    await prisma.organizationsToUsers.deleteMany({
+      where: {
+        userId: professor.id,
+        organizationId: orgId,
+      },
+    });
   });
-  return relation;
+
+  return true;
 };
 
 export const addSectionToOrg = async (orgId, professorId, name) => {
@@ -477,6 +483,126 @@ export const deleteOrganization = async (orgId) => {
   });
   return org;
 };
+
+export const getSection = async (sectionId, userId, isAdmin) => {
+  const section = await prisma.sections.findUnique({
+    select: {
+      id: true,
+      name: true,
+      organization: {
+        select: {
+          id: true,
+          name: true,
+        }
+      },
+      sectionsToUsers: {
+        select: {
+          user: true,
+        },
+        where: {
+          user: {
+            usersToRoles: {
+              some: {
+                role: {
+                  role: {
+                    not: "Student",
+                  }
+                }
+              }
+            }
+          }
+        },
+      },
+    },
+    where: {
+      id: sectionId,
+      ...(isAdmin
+        ? {}
+        : {
+            sectionsToUsers: {
+              some: {
+                user: {
+                  id: userId,
+                },
+              },
+            },
+          }),
+    },
+  });
+
+  const students = await prisma.users.findMany({
+    where: {
+      sectionsToUsers: {
+        some: {
+          section: {
+            id: sectionId,
+          }
+        }
+      },
+      usersToRoles: {
+        some: {
+          role: {
+            role: "Student",
+          }
+        }
+      },
+      ...(isAdmin ? {} : {
+        sectionsToUsers: {
+          some: {
+            section: {
+              sectionsToUsers: {
+                some: {
+                  user: {
+                    id: userId,
+                  }
+                }
+              }
+            }
+          }
+        }
+      })
+    }
+  })
+
+  const fullSection = [{...section}, {students}]
+
+  return fullSection;
+};
+
+export const generateCode = async (userId, organizationId, sectionId) => {
+  const expireDate = new Date();
+  expireDate.setHours(expireDate.getHours() + 1);
+
+  const code = await prisma.urlCodes.create({
+    data: {
+      id: uuidv4(),
+      expireDate: expireDate,
+      organizationId: organizationId,
+      sectionId: sectionId,
+      urlCodesToUsers: {
+        create: {
+          user: {
+            connect: {
+              id: userId,
+            }
+          }
+        }
+      }
+    }
+  })
+
+  return code.id;
+}
+
+export const checkIsCodeExpired = async (code) => {
+  const isCodeExpired = await prisma.urlCodes.findUnique({
+    where: {
+      id: code,
+    }
+  })
+
+  return isCodeExpired;
+}
 
 export const test = async () => {
   const org = await prisma.organizations.findMany({

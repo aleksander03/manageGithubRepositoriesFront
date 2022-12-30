@@ -42,7 +42,7 @@ model repositoriesToUsers {
   repository   repositories @relation(fields: [repositoryId], references: [id])
   user         users        @relation(fields: [userId], references: [id])
   repositoryId Int
-  userId       Int
+  userId       String
 }
 
 model sectionsToUsers {
@@ -50,7 +50,7 @@ model sectionsToUsers {
   section   sections @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   user      users    @relation(fields: [userId], references: [id])
   sectionId Int
-  userId    Int
+  userId    String
 }
 
 model organizationsToUsers {
@@ -58,19 +58,21 @@ model organizationsToUsers {
   organization   organizations @relation(fields: [organizationId], references: [id])
   user           users         @relation(fields: [userId], references: [id])
   organizationId Int
-  userId         Int
+  userId         String
 }
 
 model users {
-  id                   Int                    @id @default(autoincrement())
+  id                   String                 @id @default(uuid())
   name                 String?                @db.VarChar(50)
   surname              String?                @db.VarChar(50)
   githubEmail          String                 @unique @db.VarChar(255)
   studentEmail         String?                @unique @db.VarChar(255)
+  approved             Boolean
   repositoriesToUsers  repositoriesToUsers[]
   sectionsToUsers      sectionsToUsers[]
   organizationsToUsers organizationsToUsers[]
   usersToRoles         usersToRoles[]
+  urlCodesToUsers      urlCodesToUsers[]
 }
 
 model roles {
@@ -80,9 +82,25 @@ model roles {
 }
 
 model usersToRoles {
-  id     Int   @id @default(autoincrement())
-  user   users @relation(fields: [userId], references: [id])
-  role   roles @relation(fields: [roleId], references: [id])
-  userId Int
+  id     Int    @id @default(autoincrement())
+  user   users  @relation(fields: [userId], references: [id])
+  role   roles  @relation(fields: [roleId], references: [id])
+  userId String
   roleId Int
+}
+
+model urlCodes {
+  id              String            @id @default(uuid())
+  expireDate      DateTime          @db.Timestamptz()
+  organizationId  Int
+  sectionId       Int
+  urlCodesToUsers urlCodesToUsers[]
+}
+
+model urlCodesToUsers {
+  id        Int      @id @default(autoincrement())
+  urlCode   urlCodes @relation(fields: [urlCodeId], references: [id])
+  user      users    @relation(fields: [userId], references: [id])
+  urlCodeId String
+  userId    String
 }
