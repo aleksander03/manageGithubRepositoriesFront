@@ -227,7 +227,7 @@ app.get("/api/generateCode", async (req, res) => {
     const sectionId = parseInt(req.query.sectionId);
 
     const code = await client.generateCode(userId, organizationId, sectionId);
-    if(code) res.send(code);
+    if(code) res.send(JSON.stringify(code));
     else res.sendStatus(403);
   }catch(error){
     console.log(error)

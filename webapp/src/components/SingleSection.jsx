@@ -38,6 +38,7 @@ const SingleSection = () => {
   const [students, setStudents] = useState([]);
   const [sectionName, setSectionName] = useState("");
   const [dialog, setDialog] = useState(0);
+  const [addStudentsLink, setAddStudentsLink] = useState("");
   const navigate = useNavigate();
 
   const getSection = async () => {
@@ -152,6 +153,28 @@ const SingleSection = () => {
     setDialog(0);
   };
 
+  const generateCode = async () => {
+    const userId = localStorage.getItem("userId");
+    const response = await fetch(
+      `${serverSite}/api/generateCode?userId=${userId}&orgId=${section.organizationId}&sectionId=${section.id}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (response.status === 200)
+      response.json().then((body) => {
+        console.log(body);
+        setAddStudentsLink(`http://localhost:3000/section/form/${body}`);
+      });
+  };
+
+  console.log(addStudentsLink);
+
   const dialogScreen =
     dialog === 1 ? (
       <>
@@ -262,9 +285,14 @@ const SingleSection = () => {
               readOnly: true,
             }}
             sx={{ minWidth: "100%" }}
+            value={addStudentsLink}
           />
           <Divider sx={{ mt: 1, mb: 1 }} />
-          <Button variant="contained" sx={{ minWidth: "100%", pt: 2, pb: 2 }}>
+          <Button
+            variant="contained"
+            sx={{ minWidth: "100%", pt: 2, pb: 2 }}
+            onClick={generateCode}
+          >
             Generuj link
           </Button>
         </DialogContent>

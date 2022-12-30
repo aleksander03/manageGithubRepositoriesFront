@@ -8,6 +8,7 @@ import Sections from "./Sections";
 import StudentsList from "./StudentsList";
 import SingleOrganization from "./SingleOrganization";
 import SingleSection from "./SingleSection";
+import SingUpStudentsPage from "./SignUpStudentsPage";
 
 const App = () => {
   return (
@@ -26,6 +27,11 @@ const App = () => {
           element={<SingleOrganization />}
         />
         <Route exact path="/section/:id" element={<SingleSection />} />
+        <Route
+          exact
+          path="/section/form/:code"
+          element={<SingUpStudentsPage />}
+        />
       </Routes>
     </BrowserRouter>
   );
