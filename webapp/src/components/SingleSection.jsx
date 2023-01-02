@@ -14,6 +14,11 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
   TextField,
   Typography,
 } from "@mui/material";
@@ -27,9 +32,11 @@ import FindInPageIcon from "@mui/icons-material/FindInPage";
 import { useState } from "react";
 import { useEffect } from "react";
 import Papa from "papaparse";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const SingleSection = () => {
   const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
+  const siteUrl = process.env.REACT_APP_REDIRECT_URL;
   const urlParams = useParams();
   const editedSectionId = urlParams.id;
   const siteName = "Edycja sekcji";
@@ -39,6 +46,8 @@ const SingleSection = () => {
   const [sectionName, setSectionName] = useState("");
   const [dialog, setDialog] = useState(0);
   const [addStudentsLink, setAddStudentsLink] = useState("");
+  const [studentsInQueue, setStudentsInQueue] = useState([]);
+  const [deleteStudentFromLink, setDeleteStudentFromLink] = useState({});
   const navigate = useNavigate();
 
   const getSection = async () => {
@@ -97,6 +106,22 @@ const SingleSection = () => {
     }
   };
 
+  const getStudentsInQueue = async () => {
+    const response = await fetch(
+      `${serverSite}/api/getStudentsInQueue?sectionId=${editedSectionId}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (response.status === 200)
+      response.json().then((body) => setStudentsInQueue(body));
+  };
+
   const professorsList =
     professors.length > 0 &&
     professors.map((professor) => {
@@ -150,13 +175,14 @@ const SingleSection = () => {
   };
 
   const handleCloseDialog = () => {
+    if (dialog === 6) setAddStudentsLink("");
     setDialog(0);
   };
 
   const generateCode = async () => {
     const userId = localStorage.getItem("userId");
     const response = await fetch(
-      `${serverSite}/api/generateCode?userId=${userId}&orgId=${section.organizationId}&sectionId=${section.id}`,
+      `${serverSite}/api/generateCode?userId=${userId}&sectionId=${section.id}`,
       {
         method: "GET",
         headers: {
@@ -169,11 +195,33 @@ const SingleSection = () => {
     if (response.status === 200)
       response.json().then((body) => {
         console.log(body);
-        setAddStudentsLink(`http://localhost:3000/section/form/${body}`);
+        setAddStudentsLink(`${siteUrl}section/form/${body}`);
       });
   };
 
-  console.log(addStudentsLink);
+  const addStudentsToSection = async () => {
+    const studentsToAdd = [];
+
+    studentsInQueue.map((student) => studentsToAdd.push(student.id));
+    console.log(studentsToAdd);
+
+    const response = await fetch(`${serverSite}/api/addStudentsToSection`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        users: studentsToAdd,
+        sectionId: section.id,
+      }),
+    });
+
+    if (response.status === 200) {
+      setDialog(0);
+      getSection();
+    }
+  };
 
   const dialogScreen =
     dialog === 1 ? (
@@ -303,6 +351,65 @@ const SingleSection = () => {
           <Button onClick={handleCloseDialog}>Anuluj</Button>
         </DialogActions>
       </>
+    ) : dialog === 7 ? (
+      <>
+        <DialogTitle>Lista oczekujących studentów do dodania</DialogTitle>
+        <DialogContent>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Imię</TableCell>
+                <TableCell>Nazwisko</TableCell>
+                <TableCell>Email GitHub</TableCell>
+                <TableCell>Email uczelniany</TableCell>
+                <TableCell></TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {studentsInQueue.map((row) => {
+                return (
+                  <TableRow>
+                    <TableCell>{row.name}</TableCell>
+                    <TableCell>{row.surname}</TableCell>
+                    <TableCell>{row.githubEmail}</TableCell>
+                    <TableCell>{row.studentEmail}</TableCell>
+                    <TableCell>
+                      <IconButton
+                        onClick={() => {
+                          setDeleteStudentFromLink(row);
+                          setDialog(8);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialog(0)}>Anuluj</Button>
+          <Button onClick={() => addStudentsToSection()}>
+            Dodaj wszystkich
+          </Button>
+        </DialogActions>
+      </>
+    ) : dialog === 8 ? (
+      <>
+        <DialogTitle>Usuwanie studenta</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Czy jesteś pewien, że chcesz usunąć studenta{" "}
+            {deleteStudentFromLink.name + " " + deleteStudentFromLink.surname}?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialog(7)}>Anuluj</Button>
+          <Button>Tak</Button>
+        </DialogActions>
+      </>
     ) : (
       <></>
     );
@@ -411,12 +518,17 @@ const SingleSection = () => {
                       borderRadius: 2,
                       "&:hover": { backgroundColor: "#1976d2" },
                     }}
-                    onClick={() => setDialog(6)}
+                    onClick={() => {
+                      getStudentsInQueue();
+                      setDialog(7);
+                    }}
                   >
                     <ListItemText
                       primary={
                         <center>
-                          <Typography variant="h6">Dodaj studentów</Typography>
+                          <Typography variant="h6">
+                            Lista oczekujących
+                          </Typography>
                         </center>
                       }
                     />
@@ -502,7 +614,7 @@ const SingleSection = () => {
                 <Button
                   variant="contained"
                   size="large"
-                  // onClick={() => handleOpenDialog(3)}
+                  onClick={() => setDialog(6)}
                 >
                   Dodaj
                 </Button>
@@ -518,7 +630,10 @@ const SingleSection = () => {
         open={dialog}
         onClose={handleCloseDialog}
         PaperProps={{
-          style: { backgroundColor: "#d9d9d9", minWidth: 400, minHeight: 300 },
+          style: {
+            backgroundColor: "#d9d9d9",
+            maxWidth: 1000,
+          },
         }}
       >
         {dialogScreen}

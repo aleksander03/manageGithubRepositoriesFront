@@ -212,42 +212,6 @@ app.delete("/api/deleteProfessorsFromOrganization", async (req, res) => {
   }
 });
 
-app.post("/github/addStudentsToSection", async (req, res) => {
-  try{
-    
-  }catch(error){
-    console.error(error)
-  }
-})
-
-app.get("/api/generateCode", async (req, res) => {
-  try{
-    const userId = req.query.userId;
-    const organizationId = parseInt(req.query.orgId);
-    const sectionId = parseInt(req.query.sectionId);
-
-    const code = await client.generateCode(userId, organizationId, sectionId);
-    if(code) res.send(JSON.stringify(code));
-    else res.sendStatus(403);
-  }catch(error){
-    console.log(error)
-  }
-})
-
-app.get("/api/checkIsCodeExpired", async (req, res) => {
-  try{
-    const code = req.query.code;
-
-    const isCodeExpired = await client.checkIsCodeExpired(code);
-    if(isCodeExpired) 
-      if(isCodeExpired.expireDate > new Date()) res.sendStatus(200)
-    
-    else res.sendStatus(418);
-  }catch(error){
-    console.log(error)
-  }
-})
-
 app.get("/api/getSection", async (req, res) => {
   try {
     const sectionId = parseInt(req.query.sectionId);
@@ -259,7 +223,7 @@ app.get("/api/getSection", async (req, res) => {
     if (section) res.send(section);
     else res.sendStatus(404);
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 });
 
@@ -274,6 +238,95 @@ app.put("/api/addSectionToOrg", async (req, res) => {
     else res.sendStatus(503);
   } catch (error) {
     res.send(error);
+  }
+});
+
+app.get("/api/generateCode", async (req, res) => {
+  try {
+    const userId = req.query.userId;
+    const sectionId = parseInt(req.query.sectionId);
+
+    const code = await client.generateCode(userId, sectionId);
+    if (code) res.send(JSON.stringify(code));
+    else res.sendStatus(403);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.get("/api/checkIsCodeExpired", async (req, res) => {
+  try {
+    const code = req.query.code;
+
+    const isCodeExpired = await client.checkIsCodeExpired(code);
+    if (isCodeExpired)
+      if (isCodeExpired.expireDate > new Date()) res.sendStatus(200);
+      else res.sendStatus(418);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.put("/api/addStudentFromLink", async (req, res) => {
+  try {
+    const name = req.query.name;
+    const surname = req.query.surname;
+    const githubEmail = req.query.githubEmail;
+    const studentEmail = req.query.studentEmail;
+    const urlCode = req.query.urlCode;
+
+    let user;
+
+    const isUserExist = await client.checkIsUserExist(
+      githubEmail,
+      studentEmail
+    );
+    if (isUserExist) {
+      user = await client.addStudentToUrlCode(
+        githubEmail,
+        urlCode,
+        studentEmail
+      );
+    } else {
+      user = await client.addStudentFromLink(
+        name,
+        surname,
+        githubEmail,
+        studentEmail,
+        urlCode
+      );
+    }
+
+    if (user) res.sendStatus(200);
+    else res.sendStatus(418);
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+app.get("/api/getStudentsInQueue", async (req, res) => {
+  try {
+    const sectionId = parseInt(req.query.sectionId);
+
+    const students = await client.getStudentsInQueue(sectionId);
+
+    if (students) res.send(students);
+    else res.sendStatus(404);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.post("/api/addStudentsToSection", async (req, res) => {
+  try {
+    const users = req.body.users;
+    const sectionId = req.body.sectionId;
+
+    const students = await client.addStudentsToSection(users, sectionId);
+    if (students) res.sendStatus(200);
+    else res.sendStatus(418);
+  } catch (error) {
+    console.error(error);
   }
 });
 

@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
-import {v4 as uuidv4} from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
 export const isAdmin = async (userId) => {
   const isAdmin = await prisma.users.findFirst({
@@ -435,7 +435,7 @@ export const deleteProfessorsFromOrganization = async (orgId, professorId) => {
   professorId.map(async (professor) => {
     await prisma.organizationsToUsers.deleteMany({
       where: {
-        userId: professor.id,
+        userId: professor,
         organizationId: orgId,
       },
     });
@@ -493,7 +493,7 @@ export const getSection = async (sectionId, userId, isAdmin) => {
         select: {
           id: true,
           name: true,
-        }
+        },
       },
       sectionsToUsers: {
         select: {
@@ -506,11 +506,11 @@ export const getSection = async (sectionId, userId, isAdmin) => {
                 role: {
                   role: {
                     not: "Student",
-                  }
-                }
-              }
-            }
-          }
+                  },
+                },
+              },
+            },
+          },
         },
       },
     },
@@ -536,40 +536,42 @@ export const getSection = async (sectionId, userId, isAdmin) => {
         some: {
           section: {
             id: sectionId,
-          }
-        }
+          },
+        },
       },
       usersToRoles: {
         some: {
           role: {
             role: "Student",
-          }
-        }
+          },
+        },
       },
-      ...(isAdmin ? {} : {
-        sectionsToUsers: {
-          some: {
-            section: {
-              sectionsToUsers: {
-                some: {
-                  user: {
-                    id: userId,
-                  }
-                }
-              }
-            }
-          }
-        }
-      })
-    }
-  })
+      ...(isAdmin
+        ? {}
+        : {
+            sectionsToUsers: {
+              some: {
+                section: {
+                  sectionsToUsers: {
+                    some: {
+                      user: {
+                        id: userId,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          }),
+    },
+  });
 
-  const fullSection = [{...section}, {students}]
+  const fullSection = [{ ...section }, { students }];
 
   return fullSection;
 };
 
-export const generateCode = async (userId, organizationId, sectionId) => {
+export const generateCode = async (userId, sectionId) => {
   const expireDate = new Date();
   expireDate.setHours(expireDate.getHours() + 1);
 
@@ -577,32 +579,197 @@ export const generateCode = async (userId, organizationId, sectionId) => {
     data: {
       id: uuidv4(),
       expireDate: expireDate,
-      organizationId: organizationId,
-      sectionId: sectionId,
+      section: {
+        connect: {
+          id: sectionId,
+        },
+      },
       urlCodesToUsers: {
         create: {
           user: {
             connect: {
               id: userId,
-            }
-          }
-        }
-      }
-    }
-  })
+            },
+          },
+        },
+      },
+    },
+  });
 
   return code.id;
-}
+};
 
 export const checkIsCodeExpired = async (code) => {
   const isCodeExpired = await prisma.urlCodes.findUnique({
     where: {
       id: code,
-    }
-  })
+    },
+  });
 
   return isCodeExpired;
-}
+};
+
+export const checkIsUserExist = async (githubEmail, studentEmail) => {
+  const user = await prisma.users.findFirst({
+    where: {
+      OR: [{ githubEmail: githubEmail }, { studentEmail: studentEmail }],
+    },
+  });
+
+  return user;
+};
+
+export const addStudentToUrlCode = async (
+  githubEmail,
+  urlCode,
+  studentEmail
+) => {
+  const isUserInCodeOrSection = await prisma.users.findFirst({
+    where: {
+      OR: [{ githubEmail: githubEmail }, { studentEmail: studentEmail }],
+      urlCodesToUsers: {
+        some: {
+          urlCode: {
+            OR: [
+              {
+                id: urlCode,
+              },
+              {
+                section: {
+                  sectionsToUsers: {
+                    some: {
+                      user: {
+                        OR: [
+                          { githubEmail: githubEmail },
+                          { studentEmail: studentEmail },
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+      },
+    },
+  });
+
+  if (isUserInCodeOrSection) {
+    return;
+  } else {
+    const user = await prisma.users.update({
+      where: {
+        githubEmail: githubEmail,
+      },
+      data: {
+        urlCodesToUsers: {
+          create: {
+            urlCode: {
+              connect: {
+                urlCode: urlCode,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return user;
+  }
+};
+
+export const addStudentFromLink = async (
+  name,
+  surname,
+  githubEmail,
+  studentEmail,
+  urlCode
+) => {
+  const student = await prisma.users.create({
+    data: {
+      name: name,
+      surname: surname,
+      githubEmail: githubEmail,
+      studentEmail: studentEmail,
+      urlCodesToUsers: {
+        create: {
+          urlCode: {
+            connect: {
+              id: urlCode,
+            },
+          },
+        },
+      },
+      usersToRoles: {
+        create: {
+          role: {
+            connect: {
+              role: "Student",
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return student;
+};
+
+export const getStudentsInQueue = async (sectionId) => {
+  const students = await prisma.users.findMany({
+    where: {
+      urlCodesToUsers: {
+        some: {
+          urlCode: {
+            section: {
+              id: sectionId,
+            },
+          },
+        },
+      },
+      usersToRoles: {
+        some: {
+          role: {
+            role: "Student",
+          },
+        },
+      },
+      sectionsToUsers: {
+        every: {
+          section: {
+            id: {
+              not: sectionId,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return students;
+};
+
+export const addStudentsToSection = (students, sectionId) => {
+  students.map(async (student) => {
+    await prisma.sectionsToUsers.create({
+      data: {
+        user: {
+          connect: {
+            id: student,
+          },
+        },
+        section: {
+          connect: {
+            id: sectionId,
+          },
+        },
+      },
+    });
+  });
+
+  return true;
+};
 
 export const test = async () => {
   const org = await prisma.organizations.findMany({

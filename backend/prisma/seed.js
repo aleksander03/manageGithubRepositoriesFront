@@ -19,7 +19,6 @@ async function main() {
       surname: "Uljaniwski",
       githubEmail: "indoras@o2.pl",
       studentEmail: "alekulj284@student.polsl.pl",
-      approved: true,
       usersToRoles: {
         create: {
           role: {
@@ -39,7 +38,6 @@ async function main() {
         name: `Profesor${i}`,
         surname: `Nowak${i}`,
         githubEmail: `profesor${i}@git.com`,
-        approved: true,
         usersToRoles: {
           create: {
             role: {
@@ -110,7 +108,6 @@ async function main() {
             surname: `Kowalski${i}${j}${k}`,
             githubEmail: `Student${i}${j}${k}@git.com`,
             studentEmail: `Student${i}${j}${k}@polsl.com`,
-            approved: true,
             usersToRoles: {
               create: {
                 role: {
@@ -143,11 +140,6 @@ async function main() {
                 repository: {
                   create: {
                     link: `student-repository${i}${j}${k}`,
-                    section: {
-                      connect: {
-                        id: (i+1)*(j+1),
-                      },
-                    },
                   },
                 },
               },
@@ -178,11 +170,6 @@ async function main() {
           },
           create: {
             link: `utracone${i}${j}${k}`,
-            section: {
-              connect: {
-                id: (i+1)*(j+1),
-              },
-            },
           },
         });
       }

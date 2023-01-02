@@ -14,18 +14,16 @@ datasource db {
 model repositories {
   id                  Int                   @id @default(autoincrement())
   link                String                @unique @db.VarChar(255)
-  section             sections              @relation(fields: [sectionId], references: [id])
-  sectionId           Int
   repositoriesToUsers repositoriesToUsers[]
 }
 
 model sections {
   id              Int               @id @default(autoincrement())
   name            String            @db.VarChar(255)
-  repositories    repositories[]
   organization    organizations     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   organizationId  Int
   sectionsToUsers sectionsToUsers[]
+  urlCodes        urlCodes[]
 }
 
 model organizations {
@@ -39,8 +37,8 @@ model organizations {
 
 model repositoriesToUsers {
   id           Int          @id @default(autoincrement())
-  repository   repositories @relation(fields: [repositoryId], references: [id])
-  user         users        @relation(fields: [userId], references: [id])
+  repository   repositories @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  user         users        @relation(fields: [userId], references: [id], onDelete: Cascade)
   repositoryId Int
   userId       String
 }
@@ -48,15 +46,15 @@ model repositoriesToUsers {
 model sectionsToUsers {
   id        Int      @id @default(autoincrement())
   section   sections @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  user      users    @relation(fields: [userId], references: [id])
+  user      users    @relation(fields: [userId], references: [id], onDelete: Cascade)
   sectionId Int
   userId    String
 }
 
 model organizationsToUsers {
   id             Int           @id @default(autoincrement())
-  organization   organizations @relation(fields: [organizationId], references: [id])
-  user           users         @relation(fields: [userId], references: [id])
+  organization   organizations @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           users         @relation(fields: [userId], references: [id], onDelete: Cascade)
   organizationId Int
   userId         String
 }
@@ -67,7 +65,6 @@ model users {
   surname              String?                @db.VarChar(50)
   githubEmail          String                 @unique @db.VarChar(255)
   studentEmail         String?                @unique @db.VarChar(255)
-  approved             Boolean
   repositoriesToUsers  repositoriesToUsers[]
   sectionsToUsers      sectionsToUsers[]
   organizationsToUsers organizationsToUsers[]
@@ -83,8 +80,8 @@ model roles {
 
 model usersToRoles {
   id     Int    @id @default(autoincrement())
-  user   users  @relation(fields: [userId], references: [id])
-  role   roles  @relation(fields: [roleId], references: [id])
+  user   users  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   roles  @relation(fields: [roleId], references: [id], onDelete: Cascade)
   userId String
   roleId Int
 }
@@ -92,9 +89,9 @@ model usersToRoles {
 model urlCodes {
   id              String            @id @default(uuid())
   expireDate      DateTime          @db.Timestamptz()
-  organizationId  Int
-  sectionId       Int
+  section         sections          @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   urlCodesToUsers urlCodesToUsers[]
+  sectionId       Int
 }
 
 model urlCodesToUsers {
