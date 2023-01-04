@@ -50,10 +50,10 @@ const SingleOrganization = () => {
       professors.map((person) => {
         const label = person.name + " " + person.surname;
         return (
-          <ListItem key={person.githubEmail}>
+          <ListItem key={person.githubLogin}>
             <ListItemButton
               role={undefined}
-              onClick={() => setSelectedProfessors(person.githubEmail)}
+              onClick={() => setSelectedProfessors(person.githubLogin)}
               dense
             >
               <ListItemIcon>
@@ -99,9 +99,9 @@ const SingleOrganization = () => {
       <></>
     );
 
-  const setSelectedProfessors = (githubEmail) => {
+  const setSelectedProfessors = (githubLogin) => {
     const newProfessorsList = professors.map((professor) => {
-      if (professor.githubEmail === githubEmail) {
+      if (professor.githubLogin === githubLogin) {
         return { ...professor, isSelected: !professor.isSelected };
       }
       return professor;
@@ -172,7 +172,7 @@ const SingleOrganization = () => {
                   id: row.id,
                   name: row.name,
                   surname: row.surname,
-                  githubEmail: row.githubEmail,
+                  githubLogin: row.githubLogin,
                   isSelected: false,
                 };
               })
@@ -288,7 +288,7 @@ const SingleOrganization = () => {
                         {professor.name + " " + professor.surname}
                       </Typography>
                       <Typography variant="h7">
-                        {professor.githubEmail}
+                        {professor.githubLogin}
                       </Typography>
                     </>
                   }

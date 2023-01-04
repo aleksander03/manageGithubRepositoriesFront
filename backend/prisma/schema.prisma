@@ -63,7 +63,7 @@ model users {
   id                   String                 @id @default(uuid())
   name                 String?                @db.VarChar(50)
   surname              String?                @db.VarChar(50)
-  githubEmail          String                 @unique @db.VarChar(255)
+  githubLogin          String                 @unique @db.VarChar(255)
   studentEmail         String?                @unique @db.VarChar(255)
   repositoriesToUsers  repositoriesToUsers[]
   sectionsToUsers      sectionsToUsers[]

@@ -17,7 +17,7 @@ async function main() {
       id: uuidv4(),
       name: "Aleksander",
       surname: "Uljaniwski",
-      githubEmail: "indoras@o2.pl",
+      githubLogin: "aleksander03",
       studentEmail: "alekulj284@student.polsl.pl",
       usersToRoles: {
         create: {
@@ -37,7 +37,7 @@ async function main() {
         id: uuidv4(),
         name: `Profesor${i}`,
         surname: `Nowak${i}`,
-        githubEmail: `profesor${i}@git.com`,
+        githubLogin: `profesor${i}@git.com`,
         usersToRoles: {
           create: {
             role: {
@@ -71,7 +71,7 @@ async function main() {
           create: {
             user: {
               connect: {
-                githubEmail: `profesor${i}@git.com`,
+                githubLogin: `profesor${i}@git.com`,
               },
             },
           },
@@ -92,7 +92,7 @@ async function main() {
             create: {
               user: {
                 connect: {
-                  githubEmail: `profesor${i}@git.com`,
+                  githubLogin: `profesor${i}@git.com`,
                 },
               },
             },
@@ -106,7 +106,7 @@ async function main() {
             id: uuidv4(),
             name: `Student${i}${j}${k}`,
             surname: `Kowalski${i}${j}${k}`,
-            githubEmail: `Student${i}${j}${k}@git.com`,
+            githubLogin: `Student${i}${j}${k}@git.com`,
             studentEmail: `Student${i}${j}${k}@polsl.com`,
             usersToRoles: {
               create: {
@@ -162,7 +162,7 @@ async function main() {
               create: {
                 user: {
                   connect: {
-                    githubEmail: `profesor${i}@git.com`,
+                    githubLogin: `profesor${i}@git.com`,
                   },
                 },
               },

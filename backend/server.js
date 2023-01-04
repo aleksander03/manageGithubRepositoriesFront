@@ -39,7 +39,7 @@ app.post("/api/getUser", async (req, res) => {
     const token = req.body.token;
     const octokit = new Octokit({ auth: token });
     const response = await octokit.request("GET /user", {});
-    let user = await client.findUserByGitHubEmail(response.data.email);
+    let user = await client.findUserBygithubLogin(response.data.login);
 
     if (!user) {
       let name;
@@ -50,7 +50,7 @@ app.post("/api/getUser", async (req, res) => {
       }
 
       user = await client.createNewUserFromGit(
-        response.data.email,
+        response.data.login,
         name[0],
         name[1]
       );
@@ -271,19 +271,20 @@ app.put("/api/addStudentFromLink", async (req, res) => {
   try {
     const name = req.query.name;
     const surname = req.query.surname;
-    const githubEmail = req.query.githubEmail;
+    const githubLogin = req.query.githubLogin;
     const studentEmail = req.query.studentEmail;
     const urlCode = req.query.urlCode;
 
     let user;
 
     const isUserExist = await client.checkIsUserExist(
-      githubEmail,
+      githubLogin,
       studentEmail
     );
+
     if (isUserExist) {
       user = await client.addStudentToUrlCode(
-        githubEmail,
+        githubLogin,
         urlCode,
         studentEmail
       );
@@ -291,7 +292,7 @@ app.put("/api/addStudentFromLink", async (req, res) => {
       user = await client.addStudentFromLink(
         name,
         surname,
-        githubEmail,
+        githubLogin,
         studentEmail,
         urlCode
       );
@@ -321,10 +322,65 @@ app.post("/api/addStudentsToSection", async (req, res) => {
   try {
     const users = req.body.users;
     const sectionId = req.body.sectionId;
+    const sectionName = req.body.sectionName;
+    const token = req.body.token;
+    const orgName = req.body.orgName;
+    const octokit = new Octokit({ auth: token });
+
+    users.map(async (student) => {
+      try {
+        const { data: team } = await octokit.teams.create({
+          org: orgName,
+          name: student.id + "-" + sectionName,
+          privacy: "closed",
+          permission: "push",
+        });
+
+        const { data: repo } = await octokit.repos.createInOrg({
+          org: orgName,
+          name: student.id + "-" + sectionName + "-repo",
+          team_id: team.id,
+          private: true,
+          auto_init: true,
+        });
+
+        await octokit.teams.addOrUpdateMembershipForUserInOrg({
+          team_slug: team.slug,
+          org: orgName,
+          username: student.githubLogin,
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    });
 
     const students = await client.addStudentsToSection(users, sectionId);
     if (students) res.sendStatus(200);
     else res.sendStatus(418);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.post("/api/addStudentsFromCSV", (req, res) => {
+  try {
+    const studentsList = req.body.users;
+    const sectionId = parseInt(req.body.sectionId);
+
+    studentsList.map(async (student) => {
+      if (student.name !== "") {
+        const isStudentExist = await client.checkIsUserExist(
+          student.githubLogin,
+          student.studentEmail
+        );
+        if (!isStudentExist) {
+          await client.addStudentFromCSV(student, sectionId);
+        } else {
+          await client.addStudentToSectionFromCSV(student, sectionId);
+        }
+      }
+    });
+    res.sendStatus(200);
   } catch (error) {
     console.error(error);
   }

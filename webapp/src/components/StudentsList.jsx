@@ -23,7 +23,7 @@ import { useEffect } from "react";
 const headCells = [
   { id: "name", label: "Imię", numeric: false },
   { id: "surname", label: "Nazwisko", numeric: false },
-  { id: "githubEmail", label: "GitHub Email", numeric: false },
+  { id: "githubLogin", label: "GitHub Login", numeric: false },
   { id: "studentEmail", label: "Studencki Email", numeric: false },
 ];
 
@@ -95,7 +95,7 @@ const StudentsList = () => {
       <TableRow hover>
         <TableCell>{row.name}</TableCell>
         <TableCell>{row.surname}</TableCell>
-        <TableCell>{row.githubEmail}</TableCell>
+        <TableCell>{row.githubLogin}</TableCell>
         <TableCell>{row.studentEmail}</TableCell>
       </TableRow>
     );

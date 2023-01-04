@@ -48,7 +48,7 @@ const Login = () => {
         localStorage.setItem("userId", body.id);
         localStorage.setItem("name", body.name);
         localStorage.setItem("surname", body.surname);
-        localStorage.setItem("githubEmail", body.githubEmail);
+        localStorage.setItem("githubLogin", body.githubLogin);
         localStorage.setItem("studentEmail", body.studentEmail);
       });
 

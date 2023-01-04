@@ -36,17 +36,17 @@ export const orgsIdsForUser = async (userId) => {
   return orgIds;
 };
 
-export const findUserByGitHubEmail = async (githubEmail) => {
+export const findUserBygithubLogin = async (githubLogin) => {
   const user = await prisma.users.findUnique({
-    where: { githubEmail: githubEmail },
+    where: { githubLogin: githubLogin },
   });
   return user;
 };
 
-export const createNewUserFromGit = async (githubEmail, name, surname) => {
+export const createNewUserFromGit = async (githubLogin, name, surname) => {
   const user = await prisma.users.create({
     data: {
-      githubEmail: githubEmail,
+      githubLogin: githubLogin,
       name: name,
       surname: namesurname,
     },
@@ -158,7 +158,7 @@ export const getStudents = async (
       id: true,
       name: true,
       surname: true,
-      githubEmail: true,
+      githubLogin: true,
       studentEmail: true,
     },
     where: {
@@ -401,7 +401,7 @@ export const getAvailableProfessors = async (orgId, filter) => {
           },
         },
         {
-          githubEmail: { contains: filter, mode: "insensitive" },
+          githubLogin: { contains: filter, mode: "insensitive" },
         },
       ],
     },
@@ -609,10 +609,10 @@ export const checkIsCodeExpired = async (code) => {
   return isCodeExpired;
 };
 
-export const checkIsUserExist = async (githubEmail, studentEmail) => {
+export const checkIsUserExist = async (githubLogin, studentEmail) => {
   const user = await prisma.users.findFirst({
     where: {
-      OR: [{ githubEmail: githubEmail }, { studentEmail: studentEmail }],
+      OR: [{ githubLogin: githubLogin }, { studentEmail: studentEmail }],
     },
   });
 
@@ -620,17 +620,17 @@ export const checkIsUserExist = async (githubEmail, studentEmail) => {
 };
 
 export const addStudentToUrlCode = async (
-  githubEmail,
+  githubLogin,
   urlCode,
   studentEmail
 ) => {
   const isUserInCodeOrSection = await prisma.users.findFirst({
     where: {
-      OR: [{ githubEmail: githubEmail }, { studentEmail: studentEmail }],
+      OR: [{ githubLogin: githubLogin }, { studentEmail: studentEmail }],
       urlCodesToUsers: {
         some: {
           urlCode: {
-            OR: [
+            AND: [
               {
                 id: urlCode,
               },
@@ -640,7 +640,7 @@ export const addStudentToUrlCode = async (
                     some: {
                       user: {
                         OR: [
-                          { githubEmail: githubEmail },
+                          { githubLogin: githubLogin },
                           { studentEmail: studentEmail },
                         ],
                       },
@@ -660,14 +660,14 @@ export const addStudentToUrlCode = async (
   } else {
     const user = await prisma.users.update({
       where: {
-        githubEmail: githubEmail,
+        githubLogin: githubLogin,
       },
       data: {
         urlCodesToUsers: {
           create: {
             urlCode: {
               connect: {
-                urlCode: urlCode,
+                id: urlCode,
               },
             },
           },
@@ -682,7 +682,7 @@ export const addStudentToUrlCode = async (
 export const addStudentFromLink = async (
   name,
   surname,
-  githubEmail,
+  githubLogin,
   studentEmail,
   urlCode
 ) => {
@@ -690,7 +690,7 @@ export const addStudentFromLink = async (
     data: {
       name: name,
       surname: surname,
-      githubEmail: githubEmail,
+      githubLogin: githubLogin,
       studentEmail: studentEmail,
       urlCodesToUsers: {
         create: {
@@ -756,7 +756,7 @@ export const addStudentsToSection = (students, sectionId) => {
       data: {
         user: {
           connect: {
-            id: student,
+            id: student.id,
           },
         },
         section: {
@@ -767,6 +767,57 @@ export const addStudentsToSection = (students, sectionId) => {
       },
     });
   });
+
+  return true;
+};
+
+export const addStudentFromCSV = async (student, sectionId) => {
+  const user = await prisma.users.create({
+    data: {
+      name: student.name,
+      surname: student.surname,
+      githubLogin: student.githubLogin,
+      studentEmail: student.studentEmail,
+      sectionsToUsers: {
+        create: {
+          section: {
+            connect: {
+              id: sectionId,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return user;
+};
+
+export const addStudentToSectionFromCSV = async (student, sectionId) => {
+  const isStudentExistInSection = await prisma.users.findFirst({
+    where: {
+      githubLogin: student.githubLogin,
+      sectionsToUsers: {
+        some: {
+          section: { id: sectionId },
+        },
+      },
+    },
+  });
+
+  if (isStudentExistInSection) return;
+  else
+    await prisma.users.update({
+      where: { githubLogin: student.githubLogin },
+      data: {
+        sectionsToUsers: {
+          create: { section: { connect: { id: sectionId } } },
+        },
+        usersToRoles: {
+          create: { role: { connect: { role: "Student" } } },
+        },
+      },
+    });
 
   return true;
 };

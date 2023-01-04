@@ -48,6 +48,7 @@ const SingleSection = () => {
   const [addStudentsLink, setAddStudentsLink] = useState("");
   const [studentsInQueue, setStudentsInQueue] = useState([]);
   const [deleteStudentFromLink, setDeleteStudentFromLink] = useState({});
+  const [studentsFromCSV, setStudenstFromCSV] = useState([]);
   const navigate = useNavigate();
 
   const getSection = async () => {
@@ -81,7 +82,7 @@ const SingleSection = () => {
               id: professor.user.id,
               name: professor.user.name,
               surname: professor.user.surname,
-              githubEmail: professor.user.githubEmail,
+              githubLogin: professor.user.githubLogin,
               studentEmail: professor.user.studentEmail,
               isSelected: false,
             });
@@ -93,7 +94,7 @@ const SingleSection = () => {
               id: student.id,
               name: student.name,
               surname: student.surname,
-              githubEmail: student.githubEmail,
+              githubLogin: student.githubLogin,
               studentEmail: student.studentEmail,
               isSelected: false,
             });
@@ -127,10 +128,10 @@ const SingleSection = () => {
     professors.map((professor) => {
       const label = professor.name + " " + professor.surname;
       return (
-        <ListItem key={professor.githubEmail}>
+        <ListItem key={professor.githubLogin}>
           <ListItemButton
             role={undefined}
-            //onClick={() => setSelectedProfessors(professor.githubEmail)}
+            //onClick={() => setSelectedProfessors(professor.githubLogin)}
             dense
           >
             <ListItemIcon>
@@ -147,10 +148,10 @@ const SingleSection = () => {
     students.map((student) => {
       const label = student.name + " " + student.surname;
       return (
-        <ListItem key={student.githubEmail}>
+        <ListItem key={student.githubLogin}>
           <ListItemButton
             role={undefined}
-            //onClick={() => setSelectedProfessors(professor.githubEmail)}
+            //onClick={() => setSelectedProfessors(professor.githubLogin)}
             dense
           >
             <ListItemIcon>
@@ -169,7 +170,7 @@ const SingleSection = () => {
       header: true,
       encoding: "windows-1250",
       complete: (results) => {
-        console.log(results.data);
+        setStudenstFromCSV(results.data);
       },
     });
   };
@@ -202,8 +203,9 @@ const SingleSection = () => {
   const addStudentsToSection = async () => {
     const studentsToAdd = [];
 
-    studentsInQueue.map((student) => studentsToAdd.push(student.id));
-    console.log(studentsToAdd);
+    studentsInQueue.map((student) =>
+      studentsToAdd.push({ id: student.id, githubLogin: student.githubLogin })
+    );
 
     const response = await fetch(`${serverSite}/api/addStudentsToSection`, {
       method: "POST",
@@ -214,6 +216,9 @@ const SingleSection = () => {
       body: JSON.stringify({
         users: studentsToAdd,
         sectionId: section.id,
+        token: localStorage.getItem("accessToken"),
+        sectionName: section.name,
+        orgName: section.organization,
       }),
     });
 
@@ -221,6 +226,22 @@ const SingleSection = () => {
       setDialog(0);
       getSection();
     }
+  };
+
+  const addStudentsFromCSV = async () => {
+    const response = await fetch(`${serverSite}/api/addStudentsFromCSV`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        users: studentsFromCSV,
+        sectionId: section.id,
+      }),
+    });
+
+    if (response.status === 200) getSection();
   };
 
   const dialogScreen =
@@ -302,7 +323,7 @@ const SingleSection = () => {
         <DialogContent>
           <DialogContentText>Plik powinien zawierać kolumny:</DialogContentText>
           <DialogContentText>
-            name, surname, githubEmail, studentEmail
+            name, surname, githubLogin, studentEmail
           </DialogContentText>
           <Divider sx={{ mt: 1, mb: 1 }} />
           <input accept=".csv" multiple type="file" onChange={handleCsvFile} />
@@ -313,7 +334,7 @@ const SingleSection = () => {
           <Button onClick={() => setDialog(6)}>Dodaj z linku</Button>
           <Box>
             <Button onClick={handleCloseDialog}>Anuluj</Button>
-            <Button onClick={handleCloseDialog}>Dodaj</Button>
+            <Button onClick={addStudentsFromCSV}>Dodaj</Button>
           </Box>
         </DialogActions>
       </>
@@ -371,7 +392,7 @@ const SingleSection = () => {
                   <TableRow>
                     <TableCell>{row.name}</TableCell>
                     <TableCell>{row.surname}</TableCell>
-                    <TableCell>{row.githubEmail}</TableCell>
+                    <TableCell>{row.githubLogin}</TableCell>
                     <TableCell>{row.studentEmail}</TableCell>
                     <TableCell>
                       <IconButton
@@ -391,9 +412,11 @@ const SingleSection = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialog(0)}>Anuluj</Button>
-          <Button onClick={() => addStudentsToSection()}>
-            Dodaj wszystkich
-          </Button>
+          {studentsInQueue.length > 0 && (
+            <Button onClick={() => addStudentsToSection()}>
+              Dodaj wszystkich
+            </Button>
+          )}
         </DialogActions>
       </>
     ) : dialog === 8 ? (

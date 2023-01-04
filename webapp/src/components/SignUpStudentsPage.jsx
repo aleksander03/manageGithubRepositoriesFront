@@ -23,7 +23,7 @@ const SingUpStudentsPage = () => {
   const generatedCode = urlParams.code;
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
-  const [githubEmail, setGithubEmail] = useState("");
+  const [githubLogin, setgithubLogin] = useState("");
   const [studentEmail, setStudentEmail] = useState("");
   const [alert, setAlert] = useState(0);
   const [isAddedStudent, setIsAddedStudent] = useState(false);
@@ -67,13 +67,13 @@ const SingUpStudentsPage = () => {
       name !== " " &&
       surname !== "" &&
       surname !== " " &&
-      githubEmail !== "" &&
-      githubEmail !== " " &&
+      githubLogin !== "" &&
+      githubLogin !== " " &&
       studentEmail !== "" &&
       studentEmail !== " "
     ) {
       const response = await fetch(
-        `http://localhost:5000/api/addStudentFromLink?name=${name}&surname=${surname}&githubEmail=${githubEmail}&studentEmail=${studentEmail}&urlCode=${generatedCode}`,
+        `http://localhost:5000/api/addStudentFromLink?name=${name}&surname=${surname}&githubLogin=${githubLogin}&studentEmail=${studentEmail}&urlCode=${generatedCode}`,
         {
           method: "PUT",
           headers: {
@@ -142,12 +142,12 @@ const SingUpStudentsPage = () => {
         />
         <br></br>
         <TextField
-          label="GitHub email"
+          label="GitHub login"
           type="search"
           variant="filled"
           size="small"
-          value={githubEmail}
-          onChange={(event) => setGithubEmail(event.target.value)}
+          value={githubLogin}
+          onChange={(event) => setgithubLogin(event.target.value)}
           sx={{ width: "100%" }}
           InputProps={{
             readOnly: isAddedStudent ? true : false,
