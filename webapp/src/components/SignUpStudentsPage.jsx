@@ -85,7 +85,11 @@ const SingUpStudentsPage = () => {
       if (response.status === 200) {
         setIsAddedStudent(true);
         setAlert(1);
-      } else setAlert(2);
+      } else if (response.status === 404) {
+        setAlert(4);
+      } else {
+        setAlert(2);
+      }
     } else {
       setAlert(3);
     }
@@ -179,13 +183,29 @@ const SingUpStudentsPage = () => {
           >
             Nie udało się dodać Cię do sekcji lub już w niej istniejesz!
           </Alert>
+        ) : alert === 3 ? (
+          <Alert
+            action={
+              <IconButton
+                aria-label="close"
+                color="inherit"
+                size="small"
+                onClick={() => setAlert(0)}
+              >
+                <CloseIcon fontSize="inherit" />
+              </IconButton>
+            }
+            severity="error"
+          >
+            Niektóre pola formularzu nie zostały wypełnione!
+          </Alert>
         ) : (
-          alert === 3 && (
+          alert === 4 && (
             <Alert
               action={
                 <IconButton
                   aria-label="close"
-                  color="inherit"
+                  color="error"
                   size="small"
                   onClick={() => setAlert(0)}
                 >
@@ -194,7 +214,7 @@ const SingUpStudentsPage = () => {
               }
               severity="error"
             >
-              Niektóre pola formularzu nie zostały wypełnione!
+              Użytkownik o loginie {githubLogin} nie istnieje!
             </Alert>
           )
         )}

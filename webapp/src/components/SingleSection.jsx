@@ -229,7 +229,7 @@ const SingleSection = () => {
   };
 
   const addStudentsFromCSV = async () => {
-    const response = await fetch(`${serverSite}/api/addStudentsFromCSV`, {
+    await fetch(`${serverSite}/api/addStudentsFromCSV`, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -238,10 +238,14 @@ const SingleSection = () => {
       body: JSON.stringify({
         users: studentsFromCSV,
         sectionId: section.id,
+        sectionName: section.name,
+        orgName: section.organization,
+        token: localStorage.getItem("accessToken"),
       }),
+    }).then((response) => {
+      if (response.status === 200) getSection();
+      setDialog(0);
     });
-
-    if (response.status === 200) getSection();
   };
 
   const dialogScreen =

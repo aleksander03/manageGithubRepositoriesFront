@@ -274,32 +274,38 @@ app.put("/api/addStudentFromLink", async (req, res) => {
     const githubLogin = req.query.githubLogin;
     const studentEmail = req.query.studentEmail;
     const urlCode = req.query.urlCode;
-
+    const octokit = new Octokit();
     let user;
 
-    const isUserExist = await client.checkIsUserExist(
-      githubLogin,
-      studentEmail
-    );
+    try {
+      await octokit.users.getByUsername({ username: githubLogin });
 
-    if (isUserExist) {
-      user = await client.addStudentToUrlCode(
+      const isUserExist = await client.checkIsUserExist(
         githubLogin,
-        urlCode,
         studentEmail
       );
-    } else {
-      user = await client.addStudentFromLink(
-        name,
-        surname,
-        githubLogin,
-        studentEmail,
-        urlCode
-      );
-    }
 
-    if (user) res.sendStatus(200);
-    else res.sendStatus(418);
+      if (isUserExist) {
+        user = await client.addStudentToUrlCode(
+          githubLogin,
+          urlCode,
+          studentEmail
+        );
+      } else {
+        user = await client.addStudentFromLink(
+          name,
+          surname,
+          githubLogin,
+          studentEmail,
+          urlCode
+        );
+      }
+
+      if (user) res.sendStatus(200);
+      else res.sendStatus(418);
+    } catch (e) {
+      res.sendStatus(404);
+    }
   } catch (error) {
     console.log(error);
   }
@@ -363,27 +369,57 @@ app.post("/api/addStudentsToSection", async (req, res) => {
 });
 
 app.post("/api/addStudentsFromCSV", (req, res) => {
-  try {
-    const studentsList = req.body.users;
-    const sectionId = parseInt(req.body.sectionId);
+  const studentsList = req.body.users;
+  const sectionId = parseInt(req.body.sectionId);
+  const token = req.body.token;
+  const orgName = req.body.orgName;
+  const sectionName = req.body.sectionName;
+  const octokit = new Octokit({ auth: token });
 
-    studentsList.map(async (student) => {
-      if (student.name !== "") {
+  studentsList.map(async (student) => {
+    if (student.name !== "") {
+      try {
+        let user;
+        await octokit.users.getByUsername({ username: student.githubLogin });
+
         const isStudentExist = await client.checkIsUserExist(
           student.githubLogin,
           student.studentEmail
         );
+
         if (!isStudentExist) {
-          await client.addStudentFromCSV(student, sectionId);
+          user = await client.addStudentFromCSV(student, sectionId);
         } else {
-          await client.addStudentToSectionFromCSV(student, sectionId);
+          user = await client.addStudentToSectionFromCSV(student, sectionId);
         }
+
+        const { data: team } = await octokit.teams.create({
+          org: orgName,
+          name: user.id + "-" + sectionName,
+          privacy: "closed",
+          permission: "push",
+        });
+
+        const { data: repo } = await octokit.repos.createInOrg({
+          org: orgName,
+          name: user.id + "-" + sectionName + "-repo",
+          team_id: team.id,
+          private: true,
+          auto_init: true,
+        });
+
+        await octokit.teams.addOrUpdateMembershipForUserInOrg({
+          team_slug: team.slug,
+          org: orgName,
+          username: user.githubLogin,
+        });
+      } catch (e) {
+        await client.deleteUserToSectionRelation(student.githubLogin);
+        console.error(e);
       }
-    });
-    res.sendStatus(200);
-  } catch (error) {
-    console.error(error);
-  }
+    }
+  });
+  res.send();
 });
 
 app.get("/api/getStudents", async (req, res) => {
