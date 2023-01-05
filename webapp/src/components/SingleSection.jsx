@@ -416,6 +416,23 @@ const SingleSection = () => {
     setDialog(2);
   };
 
+  const deleteSection = async () => {
+    const response = await fetch(
+      `http://localhost:5000/api/deleteSection?sectionId=${
+        section.id
+      }&userId=${localStorage.getItem("userId")}`,
+      {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (response.status === 200)
+      navigate(`/organization/${section.organizationId}`);
+  };
+
   const dialogScreen =
     dialog === 1 ? (
       <>
@@ -451,6 +468,20 @@ const SingleSection = () => {
         <DialogActions>
           <Button onClick={handleCloseDialog}>Nie</Button>
           <Button onClick={deleteSelectedProfessors}>Tak</Button>
+        </DialogActions>
+      </>
+    ) : dialog === 3 ? (
+      <>
+        <DialogTitle color="error">Usuwanie sekcji</DialogTitle>
+        <DialogContent>
+          <DialogContentText color="error">
+            Jesteś pewien, że chcesz usunąć sekcję? Proces ten będzie
+            nieodwracalny
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Nie</Button>
+          <Button onClick={deleteSection}>Tak</Button>
         </DialogActions>
       </>
     ) : dialog === 5 ? (
@@ -610,7 +641,12 @@ const SingleSection = () => {
                   ARCHIWIZUJ
                 </Button>
               </Box>
-              <Button variant="contained" size="large" color="error">
+              <Button
+                variant="contained"
+                size="large"
+                color="error"
+                onClick={() => setDialog(3)}
+              >
                 USUŃ
               </Button>
             </Box>

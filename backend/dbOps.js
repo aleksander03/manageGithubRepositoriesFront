@@ -602,3 +602,9 @@ export const deleteProfessorsFromSection = async (sectionId, professors) => {
 
   return true;
 };
+
+export const deleteSection = async (sectionId) => {
+  await prisma.sections.delete({ where: { id: sectionId } });
+
+  return true;
+};

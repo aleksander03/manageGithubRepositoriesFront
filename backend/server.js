@@ -470,6 +470,22 @@ app.delete("/api/deleteProfessorsFromSection", async (req, res) => {
   }
 });
 
+app.delete("/api/deleteSection", async (req, res) => {
+  try {
+    const sectionId = parseInt(req.query.sectionId);
+    const userId = req.query.userId;
+
+    const isAdmin = await client.isAdmin(userId);
+    if (isAdmin) {
+      const section = await client.deleteSection(sectionId);
+      if (section) res.sendStatus(200);
+      else res.sendStatus(418);
+    } else res.sendStatus(401);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
 app.get("/api/getStudents", async (req, res) => {
   try {
     const orderBy = req.query.orderBy;
