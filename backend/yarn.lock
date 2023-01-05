@@ -128,22 +128,22 @@
   dependencies:
     "@octokit/openapi-types" "^14.0.0"
 
-"@prisma/client@^4.9.0-dev.12":
-  version "4.9.0-dev.12"
-  resolved "https://registry.npmjs.org/@prisma/client/-/client-4.9.0-dev.12.tgz"
-  integrity sha512-zBN+UHbYEUtcNGOrLwHBsRpyU8By2BrgVvxsv4FwPLha1s7suSkGELqlLVEik7WHTDkMLHdD3vNqQxD4y57njQ==
+"@prisma/client@^4.9.0-dev.26":
+  version "4.9.0-dev.26"
+  resolved "https://registry.npmjs.org/@prisma/client/-/client-4.9.0-dev.26.tgz"
+  integrity sha512-9nUxsOhUMTGkTAMCAsORJLHniYF7zAvbegGOgt0tDV7s4+FFq0ldU7iFR8pAaGmRotUNHdFqM/vSASqnewyydA==
   dependencies:
-    "@prisma/engines-version" "4.9.0-4.768eaeb6a18563a8cf8b3da5c9e475edfa5c0340"
+    "@prisma/engines-version" "4.9.0-12.c1d903761a68ffeab670a6798502d9ffb77aec6f"
 
-"@prisma/engines-version@4.9.0-4.768eaeb6a18563a8cf8b3da5c9e475edfa5c0340":
-  version "4.9.0-4.768eaeb6a18563a8cf8b3da5c9e475edfa5c0340"
-  resolved "https://registry.npmjs.org/@prisma/engines-version/-/engines-version-4.9.0-4.768eaeb6a18563a8cf8b3da5c9e475edfa5c0340.tgz"
-  integrity sha512-zVcm4DdCmdOnwKKRYazFLLMkVLeX1a3gHWKhekrnD6ykPdiRPRuBkJPZns6vuoDL9+ojFHxHycpLqTWtgD+VAQ==
+"@prisma/engines-version@4.9.0-12.c1d903761a68ffeab670a6798502d9ffb77aec6f":
+  version "4.9.0-12.c1d903761a68ffeab670a6798502d9ffb77aec6f"
+  resolved "https://registry.npmjs.org/@prisma/engines-version/-/engines-version-4.9.0-12.c1d903761a68ffeab670a6798502d9ffb77aec6f.tgz"
+  integrity sha512-STGU8is9D8lp11hA7eFBcQimMcB0HolRk4lP/Ly3vrhJkzmcPWmEfYrwRipWupc7Q776Hs9XX/Z7CJHdRNcOgw==
 
-"@prisma/engines@4.9.0-dev.12":
-  version "4.9.0-dev.12"
-  resolved "https://registry.npmjs.org/@prisma/engines/-/engines-4.9.0-dev.12.tgz"
-  integrity sha512-unQv7vIiot3j0E2B2Bysg/NRbTZgNHd5ndHZyTKw+zeO2S9D9IUP9idvxWZYKzy6zHT6cVKEj3b2USMyPe6nNw==
+"@prisma/engines@4.9.0-dev.26":
+  version "4.9.0-dev.26"
+  resolved "https://registry.npmjs.org/@prisma/engines/-/engines-4.9.0-dev.26.tgz"
+  integrity sha512-V6zxDNKJfeqdt9vJ32811hUnoXnD8khcheN+BqrPKrGrHVJ22HVedJb1XJf3CN40YlynL5ztEXjyoPZUPbd/uw==
 
 "@tsconfig/node10@^1.0.7":
   version "1.0.9"
@@ -754,12 +754,12 @@ performance-now@^2.1.0:
   resolved "https://registry.npmjs.org/performance-now/-/performance-now-2.1.0.tgz"
   integrity sha512-7EAHlyLHI56VEIdK57uwHdHKIaAGbnXPiw0yWbarQZOKaKpvUIgW0jWRVLiatnM+XXlSwsanIBH/hzGMJulMow==
 
-prisma@*, prisma@^4.9.0-dev.12:
-  version "4.9.0-dev.12"
-  resolved "https://registry.npmjs.org/prisma/-/prisma-4.9.0-dev.12.tgz"
-  integrity sha512-XvvB4I00Fi8ghT20ULdBzrHr7ICsKnWWAu7BZRzysmwdcSQYOoBt1/OVQu62r1ysGVTh8n/d05E5hgouq7+9kQ==
+prisma@*, prisma@^4.9.0-dev.26:
+  version "4.9.0-dev.26"
+  resolved "https://registry.npmjs.org/prisma/-/prisma-4.9.0-dev.26.tgz"
+  integrity sha512-Kzi63PL8jWZDgte5KK0yzK34xNAA44rAIUx5zmhL5m8E9IX6Bbhubs8VrH+lgVOS+/uF0AXiIlX3Ewambeu/2A==
   dependencies:
-    "@prisma/engines" "4.9.0-dev.12"
+    "@prisma/engines" "4.9.0-dev.26"
 
 proxy-addr@~2.0.7:
   version "2.0.7"

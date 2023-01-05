@@ -422,6 +422,54 @@ app.post("/api/addStudentsFromCSV", (req, res) => {
   res.send();
 });
 
+app.get("/api/getAvailableProfessorsForSection", async (req, res) => {
+  try {
+    const sectionId = parseInt(req.query.sectionId);
+    const filter = req.query.filter;
+
+    const professors = await client.getAvailableProfessorsForSection(
+      sectionId,
+      filter
+    );
+    if (professors) res.send(professors);
+    else res.sendStatus(204);
+  } catch (error) {
+    res.send(418);
+  }
+});
+
+app.post("/api/addProfessorsToSection", async (req, res) => {
+  try {
+    const sectionId = parseInt(req.body.sectionId);
+    const professorId = req.body.userId;
+
+    const addRelation = await client.addProfessorsToSection(
+      sectionId,
+      professorId
+    );
+    if (addRelation) res.sendStatus(201);
+    else res.sendStatus(503);
+  } catch (error) {
+    res.send(error);
+  }
+});
+
+app.delete("/api/deleteProfessorsFromSection", async (req, res) => {
+  try {
+    const sectionId = parseInt(req.body.sectionId);
+    const professorId = req.body.userId;
+
+    const deleteRelation = await client.deleteProfessorsFromSection(
+      sectionId,
+      professorId
+    );
+    if (deleteRelation) res.sendStatus(200);
+    else res.sendStatus(503);
+  } catch (error) {
+    res.send(error);
+  }
+});
+
 app.get("/api/getStudents", async (req, res) => {
   try {
     const orderBy = req.query.orderBy;

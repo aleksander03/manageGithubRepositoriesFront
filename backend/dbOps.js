@@ -286,10 +286,11 @@ export const addProfessorsToOrganization = async (orgId, professorId) => {
 export const deleteProfessorsFromOrganization = async (orgId, professorId) => {
   professorId.map(async (professor) => {
     await prisma.organizationsToUsers.deleteMany({
-      where: {
-        userId: professor,
-        organizationId: orgId,
-      },
+      where: { userId: professor, organizationId: orgId },
+    });
+
+    await prisma.sectionsToUsers.deleteMany({
+      where: { userId: professor, section: { organization: { id: orgId } } },
     });
   });
 
@@ -309,15 +310,15 @@ export const addSectionToOrg = async (orgId, professorId, name) => {
 };
 
 export const deleteOrganization = async (orgId) => {
-  const orgToUsers = await prisma.organizationsToUsers.deleteMany({
-    where: { organization: { id: orgId } },
-  });
+  try {
+    const org = await prisma.organizations.delete({
+      where: { id: orgId },
+    });
 
-  const org = await prisma.organizations.delete({
-    where: { id: orgId },
-  });
-
-  return org;
+    return org;
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 export const getSection = async (sectionId, userId, isAdmin) => {
@@ -539,4 +540,65 @@ export const deleteUserToSectionRelation = async (githubLogin) => {
   });
 
   return user;
+};
+
+export const getAvailableProfessorsForSection = async (sectionId, filter) => {
+  const professors = await prisma.users.findMany({
+    take: 20,
+    where: {
+      usersToRoles: { some: { role: { role: { not: "Student" } } } },
+      sectionsToUsers: { every: { section: { id: { not: sectionId } } } },
+      OR: [
+        { name: { contains: filter, mode: "insensitive" } },
+        { surname: { contains: filter, mode: "insensitive" } },
+        { githubLogin: { contains: filter, mode: "insensitive" } },
+      ],
+    },
+  });
+
+  return professors;
+};
+
+export const addProfessorsToSection = async (sectionId, professorId) => {
+  professorId.map(async (professor) => {
+    const isUserInOrg = await prisma.organizationsToUsers.findFirst({
+      where: {
+        user: { id: professor },
+        organization: { sections: { some: { id: sectionId } } },
+      },
+    });
+
+    if (!isUserInOrg) {
+      const orgId = await prisma.organizations.findFirst({
+        select: { id: true },
+        where: { sections: { some: { id: sectionId } } },
+      });
+
+      await prisma.organizationsToUsers.create({
+        data: {
+          organization: { connect: { id: orgId.id } },
+          user: { connect: { id: professor } },
+        },
+      });
+    }
+
+    await prisma.sectionsToUsers.create({
+      data: {
+        section: { connect: { id: sectionId } },
+        user: { connect: { id: professor } },
+      },
+    });
+  });
+
+  return true;
+};
+
+export const deleteProfessorsFromSection = async (sectionId, professors) => {
+  professors.map(async (professor) => {
+    await prisma.sectionsToUsers.deleteMany({
+      where: { section: { id: sectionId }, user: { id: professor } },
+    });
+  });
+
+  return true;
 };

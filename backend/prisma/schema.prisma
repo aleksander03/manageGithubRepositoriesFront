@@ -96,8 +96,8 @@ model urlCodes {
 
 model urlCodesToUsers {
   id        Int      @id @default(autoincrement())
-  urlCode   urlCodes @relation(fields: [urlCodeId], references: [id])
-  user      users    @relation(fields: [userId], references: [id])
+  urlCode   urlCodes @relation(fields: [urlCodeId], references: [id], onDelete: Cascade)
+  user      users    @relation(fields: [userId], references: [id], onDelete: Cascade)
   urlCodeId String
   userId    String
 }

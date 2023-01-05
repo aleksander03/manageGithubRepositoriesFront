@@ -49,6 +49,10 @@ const SingleSection = () => {
   const [studentsInQueue, setStudentsInQueue] = useState([]);
   const [deleteStudentFromLink, setDeleteStudentFromLink] = useState({});
   const [studentsFromCSV, setStudenstFromCSV] = useState([]);
+  const [isAllProfessors, setIsAllProfessors] = useState(false);
+  const [isAllStudents, setIsAllStudents] = useState(false);
+  const [availableProfessors, setAvailableProfessors] = useState([]);
+  const [filterProfessors, setFilterProfessors] = useState("");
   const navigate = useNavigate();
 
   const getSection = async () => {
@@ -131,7 +135,7 @@ const SingleSection = () => {
         <ListItem key={professor.githubLogin}>
           <ListItemButton
             role={undefined}
-            //onClick={() => setSelectedProfessors(professor.githubLogin)}
+            onClick={() => setSelectedProfessors(professor.githubLogin)}
             dense
           >
             <ListItemIcon>
@@ -151,7 +155,7 @@ const SingleSection = () => {
         <ListItem key={student.githubLogin}>
           <ListItemButton
             role={undefined}
-            //onClick={() => setSelectedProfessors(professor.githubLogin)}
+            onClick={() => setSelectedStudents(student.githubLogin)}
             dense
           >
             <ListItemIcon>
@@ -248,6 +252,170 @@ const SingleSection = () => {
     });
   };
 
+  const setSelectedProfessors = (githubLogin) => {
+    const newProfessorsList = professors.map((professor) => {
+      if (professor.githubLogin === githubLogin) {
+        return { ...professor, isSelected: !professor.isSelected };
+      }
+      return professor;
+    });
+
+    setProfessors(newProfessorsList);
+  };
+
+  const setSelectedStudents = (githubLogin) => {
+    const newStudentsList = students.map((student) => {
+      if (student.githubLogin === githubLogin) {
+        return { ...student, isSelected: !student.isSelected };
+      }
+      return student;
+    });
+
+    setStudents(newStudentsList);
+  };
+
+  const selectAllProfessors = () => {
+    const newProfessorsList = professors.map((professor) => {
+      return { ...professor, isSelected: !isAllProfessors };
+    });
+    setProfessors(newProfessorsList);
+    setIsAllProfessors((oldValue) => !oldValue);
+  };
+
+  const selectAllStudents = () => {
+    const newStudentsList = students.map((section) => {
+      return { ...section, isSelected: !isAllStudents };
+    });
+    setStudents(newStudentsList);
+    setIsAllStudents((oldValue) => !oldValue);
+  };
+
+  const getAvailableProfessors = async (filter) => {
+    const filterTmp = filter !== undefined ? filter : filterProfessors;
+    const response = await fetch(
+      `http://localhost:5000/api/getAvailableProfessorsForSection?sectionId=${section.id}&filter=${filterTmp}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (response.status === 200)
+      response.json().then((body) => {
+        const newAvailableProfessors =
+          body.length > 0
+            ? body.map((professor) => {
+                return { ...professor, isSelected: false };
+              })
+            : [];
+        setAvailableProfessors(newAvailableProfessors);
+      });
+  };
+
+  const setSelectedAvailableProfessors = (id) => {
+    const newProfessorsList = availableProfessors.map((professor) => {
+      if (professor.id === id) {
+        return { ...professor, isSelected: !professor.isSelected };
+      }
+      return professor;
+    });
+    setAvailableProfessors(newProfessorsList);
+  };
+
+  const addSelectedProfessorsToSection = () => {
+    setDialog(0);
+    const selectedProfessors = [];
+    availableProfessors.map(
+      (professor) =>
+        professor.isSelected && selectedProfessors.push(professor.id)
+    );
+
+    if (selectedProfessors) {
+      const response = fetch(
+        `http://localhost:5000/api/addProfessorsToSection`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            sectionId: section.id,
+            userId: selectedProfessors,
+          }),
+        }
+      );
+
+      getSection();
+    }
+  };
+
+  const deleteSelectedProfessors = () => {
+    const deletedProfessors = [];
+    professors.map(
+      (professor) =>
+        professor.isSelected && deletedProfessors.push(professor.id)
+    );
+    deletedProfessors.length > 0
+      ? fetch(`http://localhost:5000/api/deleteProfessorsFromSection`, {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            sectionId: section.id,
+            userId: deletedProfessors,
+          }),
+        })
+      : alert("Musisz zaznaczyć cokolwiek!");
+    setDialog(0);
+    setIsAllProfessors(false);
+    getSection();
+  };
+
+  const availableProfessorsList =
+    availableProfessors.length > 0
+      ? availableProfessors.map((professor) => {
+          return (
+            <ListItem>
+              <ListItemButton
+                role={undefined}
+                onClick={() => setSelectedAvailableProfessors(professor.id)}
+                dense
+              >
+                <ListItemIcon>
+                  <Checkbox checked={professor.isSelected} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={
+                    <>
+                      <Typography variant="h6">
+                        {professor.name + " " + professor.surname}
+                      </Typography>
+                      <Typography variant="h7">
+                        {professor.githubLogin}
+                      </Typography>
+                    </>
+                  }
+                />
+              </ListItemButton>
+            </ListItem>
+          );
+        })
+      : null;
+
+  const handleOpenDeleteDialog = () => {
+    let selectedProfessors = 0;
+    professors.forEach(
+      (professor) => professor.isSelected === true && selectedProfessors++
+    );
+    if (selectedProfessors === 0) return;
+    setDialog(2);
+  };
+
   const dialogScreen =
     dialog === 1 ? (
       <>
@@ -259,17 +427,17 @@ const SingleSection = () => {
             type="search"
             fullWidth
             variant="standard"
-            // value={filterProfessors}
-            // onChange={(event) => {
-            //   setFilterProfessors(event.target.value);
-            //   getAvailableProfessors(event.target.value);
-            // }}
+            value={filterProfessors}
+            onChange={(event) => {
+              setFilterProfessors(event.target.value);
+              getAvailableProfessors(event.target.value);
+            }}
           />
-          {/* <List dense>{availableProfessorsList}</List> */}
+          <List dense>{availableProfessorsList}</List>
         </DialogContent>
         <DialogActions>
-          {/* <Button onClick={handleCloseDialog}>Anuluj</Button>
-          <Button onClick={addSelectedProfessorsToOrg}>Dodaj</Button> */}
+          <Button onClick={handleCloseDialog}>Anuluj</Button>
+          <Button onClick={addSelectedProfessorsToSection}>Dodaj</Button>
         </DialogActions>
       </>
     ) : dialog === 2 ? (
@@ -281,44 +449,8 @@ const SingleSection = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          {/* <Button onClick={handleCloseDialog}>Nie</Button>
-          <Button onClick={deleteSelectedProfessors}>Tak</Button> */}
-        </DialogActions>
-      </>
-    ) : dialog === 3 ? (
-      <>
-        <DialogTitle>Dodawanie nowego studenta</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Nazwa sekcji"
-            type="search"
-            fullWidth
-            variant="standard"
-            // value={newSectionName}
-            // onChange={(event) => {
-            //   setNewSectionName(event.target.value);
-            // }}
-          />
-        </DialogContent>
-        <DialogActions>
-          {/* <Button onClick={handleCloseDialog}>Anuluj</Button>
-          <Button onClick={addSection}>Dodaj</Button> */}
-        </DialogActions>
-      </>
-    ) : dialog === 4 ? (
-      <>
-        <DialogTitle color="error">Usuwanie sekcji</DialogTitle>
-        <DialogContent>
-          <DialogContentText color="error">
-            Jesteś pewien, że chcesz usunąć sekcję? Proces ten będzie
-            nieodwracalny
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          {/* <Button onClick={handleCloseDialog}>Nie</Button>
-          <Button onClick={deleteOrganization}>Tak</Button> */}
+          <Button onClick={handleCloseDialog}>Nie</Button>
+          <Button onClick={deleteSelectedProfessors}>Tak</Button>
         </DialogActions>
       </>
     ) : dialog === 5 ? (
@@ -570,9 +702,13 @@ const SingleSection = () => {
                 className={classes.contentList}
               >
                 <ListItem>
-                  <ListItemButton role={undefined} dense>
+                  <ListItemButton
+                    role={undefined}
+                    onClick={() => selectAllProfessors()}
+                    dense
+                  >
                     <ListItemIcon>
-                      <Checkbox />
+                      <Checkbox checked={isAllProfessors} />
                     </ListItemIcon>
                     <ListItemText
                       primary={
@@ -595,7 +731,10 @@ const SingleSection = () => {
                 <Button
                   variant="contained"
                   size="large"
-                  //onClick={() => handleOpenDialog(1)}
+                  onClick={() => {
+                    getAvailableProfessors();
+                    setDialog(1);
+                  }}
                 >
                   Dodaj
                 </Button>
@@ -603,7 +742,7 @@ const SingleSection = () => {
                   variant="contained"
                   size="large"
                   color="error"
-                  //onClick={() => handleOpenDialog(2)}
+                  onClick={handleOpenDeleteDialog}
                 >
                   USUŃ
                 </Button>
@@ -616,9 +755,13 @@ const SingleSection = () => {
                 className={classes.contentList}
               >
                 <ListItem>
-                  <ListItemButton role={undefined} dense>
+                  <ListItemButton
+                    role={undefined}
+                    onClick={() => selectAllStudents()}
+                    dense
+                  >
                     <ListItemIcon>
-                      <Checkbox />
+                      <Checkbox checked={isAllStudents} />
                     </ListItemIcon>
                     <ListItemText
                       primary={

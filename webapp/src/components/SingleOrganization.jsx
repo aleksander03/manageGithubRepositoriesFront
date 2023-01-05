@@ -192,6 +192,11 @@ const SingleOrganization = () => {
     if (id === 1) {
       getAvailableProfessors();
     } else if (id === 2) {
+      let selectedProfessors = 0;
+      professors.forEach(
+        (professor) => professor.isSelected === true && selectedProfessors++
+      );
+      if (selectedProfessors === 0) return;
     } else if (id === 3) {
     }
     setDialog(id);
@@ -357,10 +362,6 @@ const SingleOrganization = () => {
   };
 
   // const changeOrgLocalName = (newName) => {
-
-  // }
-
-  // const deleteOrganization = () => {
 
   // }
 
