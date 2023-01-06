@@ -14,6 +14,8 @@ datasource db {
 model repositories {
   id                  Int                   @id @default(autoincrement())
   link                String                @unique @db.VarChar(255)
+  section             sections?             @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  sectionId           Int?
   repositoriesToUsers repositoriesToUsers[]
 }
 
@@ -24,6 +26,7 @@ model sections {
   organizationId  Int
   sectionsToUsers sectionsToUsers[]
   urlCodes        urlCodes[]
+  repositories    repositories[]
 }
 
 model organizations {

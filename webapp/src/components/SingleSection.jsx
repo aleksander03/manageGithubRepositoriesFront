@@ -94,6 +94,12 @@ const SingleSection = () => {
 
         body[1].students.length > 0 &&
           body[1].students.forEach((student) => {
+            const repositories = [];
+
+            student.repositoriesToUsers.forEach((repository) => {
+              repositories.push({ link: repository.repository.link });
+            });
+
             studentsList.push({
               id: student.id,
               name: student.name,
@@ -101,9 +107,10 @@ const SingleSection = () => {
               githubLogin: student.githubLogin,
               studentEmail: student.studentEmail,
               isSelected: false,
+              repositories: repositories,
             });
           });
-
+        console.log(studentsList);
         setProfessors(professorsList);
         setStudents(studentsList);
         setSectionName(body[0].name);
@@ -150,7 +157,6 @@ const SingleSection = () => {
   const studentsList =
     students.length > 0 &&
     students.map((student) => {
-      const label = student.name + " " + student.surname;
       return (
         <ListItem key={student.githubLogin}>
           <ListItemButton
@@ -161,7 +167,9 @@ const SingleSection = () => {
             <ListItemIcon>
               <Checkbox checked={student.isSelected} />
             </ListItemIcon>
-            <ListItemText primary={label} />
+            <ListItemText primary={student.name + " " + student.surname}>
+              {student.repositories.link}
+            </ListItemText>
           </ListItemButton>
         </ListItem>
       );

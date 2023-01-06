@@ -11,11 +11,11 @@ const port = 5000;
 app.use(bodyParser.json());
 app.use(cors());
 
-app.post("/api/login", async (req, res) => {
+app.get("/api/login", async (req, res) => {
   try {
     const clientId = process.env.REACT_APP_CLIENT_ID;
     const clientSecretId = process.env.REACT_APP_CLIENT_SECRET;
-    const clientCode = req.body.code;
+    const clientCode = req.query.code;
 
     await request.post(
       {
@@ -350,6 +350,12 @@ app.post("/api/addStudentsToSection", async (req, res) => {
           auto_init: true,
         });
 
+        await client.createRepositoryForStudent(
+          student.id,
+          repo.html_url,
+          sectionId
+        );
+
         await octokit.teams.addOrUpdateMembershipForUserInOrg({
           team_slug: team.slug,
           org: orgName,
@@ -407,6 +413,12 @@ app.post("/api/addStudentsFromCSV", (req, res) => {
           private: true,
           auto_init: true,
         });
+
+        await client.createRepositoryForStudent(
+          user.id,
+          repo.html_url,
+          sectionId
+        );
 
         await octokit.teams.addOrUpdateMembershipForUserInOrg({
           team_slug: team.slug,

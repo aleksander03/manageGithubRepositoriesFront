@@ -360,6 +360,17 @@ export const getSection = async (sectionId, userId, isAdmin) => {
             },
           }),
     },
+    select: {
+      id: true,
+      name: true,
+      surname: true,
+      githubLogin: true,
+      studentEmail: true,
+      repositoriesToUsers: {
+        select: { repository: { select: { link: true } } },
+        where: { repository: { section: { id: sectionId } } },
+      },
+    },
   });
 
   const fullSection = [{ ...section }, { students }];
@@ -605,6 +616,18 @@ export const deleteProfessorsFromSection = async (sectionId, professors) => {
 
 export const deleteSection = async (sectionId) => {
   await prisma.sections.delete({ where: { id: sectionId } });
+
+  return true;
+};
+
+export const createRepositoryForStudent = async (userId, link, sectionId) => {
+  await prisma.repositories.create({
+    data: {
+      link: link,
+      repositoriesToUsers: { create: { user: { connect: { id: userId } } } },
+      section: { connect: { id: sectionId } },
+    },
+  });
 
   return true;
 };
