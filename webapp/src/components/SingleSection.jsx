@@ -1,7 +1,9 @@
 import {
+  Alert,
   Box,
   Button,
   Checkbox,
+  Collapse,
   Dialog,
   DialogActions,
   DialogContent,
@@ -33,6 +35,7 @@ import { useState } from "react";
 import { useEffect } from "react";
 import Papa from "papaparse";
 import DeleteIcon from "@mui/icons-material/Delete";
+import CloseIcon from "@mui/icons-material/Close";
 
 const SingleSection = () => {
   const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
@@ -53,6 +56,9 @@ const SingleSection = () => {
   const [isAllStudents, setIsAllStudents] = useState(false);
   const [availableProfessors, setAvailableProfessors] = useState([]);
   const [filterProfessors, setFilterProfessors] = useState("");
+  const [issueTitle, setIssueTitle] = useState("");
+  const [issueText, setIssueText] = useState("");
+  const [alert, setAlert] = useState(0);
   const navigate = useNavigate();
 
   const getSection = async () => {
@@ -440,30 +446,41 @@ const SingleSection = () => {
     if (response.status === 200)
       navigate(`/organization/${section.organizationId}`);
   };
-  console.log(section);
-  const newIssue = async () => {
-    let repositories = [];
 
-    students.forEach((student) => {
-      if (student.isSelected)
-        repositories.push(`${student.id}-${section.name}-repo`);
-    });
+  const sendIssue = async () => {
+    if (issueTitle.length < 1) setAlert(1);
+    else {
+      let repositories = [];
 
-    const response = await fetch(`http://localhost:5000/github/createIssue`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        token: localStorage.getItem("accessToken"),
-        owner: section.organization,
-        repoName: repositories,
-        issueTitle: "Próba",
-        issueText:
-          "Pierwsza próba stworzenia jakiegokolwiek issue. Mam nadzieję, że udana",
-      }),
-    });
+      students.forEach((student) => {
+        if (student.isSelected)
+          repositories.push(`${student.id}-${section.name}-repo`);
+      });
+
+      const response = await fetch(`http://localhost:5000/github/createIssue`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token: localStorage.getItem("accessToken"),
+          owner: section.organization,
+          repoName: repositories,
+          issueTitle: issueTitle,
+          issueText: issueText,
+        }),
+      });
+
+      if (response.status === 200) {
+        setIssueTitle("");
+        setIssueText("");
+        setAlert(0);
+        setDialog(0);
+      } else {
+        setAlert(2);
+      }
+    }
   };
 
   const dialogScreen =
@@ -515,6 +532,36 @@ const SingleSection = () => {
         <DialogActions>
           <Button onClick={handleCloseDialog}>Nie</Button>
           <Button onClick={deleteSection}>Tak</Button>
+        </DialogActions>
+      </>
+    ) : dialog === 4 ? (
+      <>
+        <DialogTitle>Tworzenie issue</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Tytuł issue*"
+            type="search"
+            variant="filled"
+            size="small"
+            sx={{ width: "100%" }}
+            value={issueTitle}
+            onChange={(event) => setIssueTitle(event.target.value)}
+          />
+          <TextField
+            label="Tekst issue"
+            type="search"
+            variant="filled"
+            size="small"
+            sx={{ width: "100%" }}
+            multiline
+            rows={5}
+            value={issueText}
+            onChange={(event) => setIssueText(event.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialog(0)}>Anuluj</Button>
+          <Button onClick={sendIssue}>Wyślij</Button>
         </DialogActions>
       </>
     ) : dialog === 5 ? (
@@ -633,6 +680,43 @@ const SingleSection = () => {
           <Button>Tak</Button>
         </DialogActions>
       </>
+    ) : (
+      <></>
+    );
+
+  const alertScreen =
+    alert === 1 ? (
+      <Alert
+        action={
+          <IconButton
+            aria-label="close"
+            color="error"
+            size="small"
+            onClick={() => setAlert(0)}
+          >
+            <CloseIcon fontSize="inherit" />
+          </IconButton>
+        }
+        severity="error"
+      >
+        Brak tytułu issue!
+      </Alert>
+    ) : alert === 2 ? (
+      <Alert
+        action={
+          <IconButton
+            aria-label="close"
+            color="error"
+            size="small"
+            onClick={() => setAlert(0)}
+          >
+            <CloseIcon fontSize="inherit" />
+          </IconButton>
+        }
+        severity="error"
+      >
+        Nie udało się wysłać issue!
+      </Alert>
     ) : (
       <></>
     );
@@ -857,7 +941,14 @@ const SingleSection = () => {
                 >
                   Dodaj
                 </Button>
-                <Button variant="contained" size="large" onClick={newIssue}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={() => {
+                    if (students.some((student) => student.isSelected))
+                      setDialog(4);
+                  }}
+                >
                   ISSUE
                 </Button>
               </Box>
@@ -872,10 +963,12 @@ const SingleSection = () => {
           style: {
             backgroundColor: "#d9d9d9",
             maxWidth: 1000,
+            minWidth: 500,
           },
         }}
       >
         {dialogScreen}
+        <Collapse in={alert}>{alertScreen}</Collapse>
       </Dialog>
     </Box>
   );

@@ -347,7 +347,7 @@ app.post("/api/addStudentsToSection", async (req, res) => {
           org: orgName,
           name: student.id + "-" + sectionName + "-repo",
           team_id: team.id,
-          private: false,
+          private: true,
           auto_init: true,
         });
 
@@ -411,7 +411,7 @@ app.post("/api/addStudentsFromCSV", (req, res) => {
           org: orgName,
           name: user.id + "-" + sectionName + "-repo",
           team_id: team.id,
-          private: false,
+          private: true,
           auto_init: true,
         });
 
@@ -519,6 +519,8 @@ app.post("/github/createIssue", (req, res) => {
         body: issueText,
       });
     })
+
+    res.sendStatus(200);
   }catch(error){
     console.error(error)
   }

@@ -5,7 +5,7 @@ import TopBar from "./TopBar";
 import classesLayout from "./Layout.module.scss";
 
 const AddFromCsv = () => {
-  const siteName = "Dodaj z CSV";
+  const siteName = "Dodaj użytkowników";
   return (
     <Box className={classesLayout.mainContainer}>
       <Box className={classesLayout.topBar}>

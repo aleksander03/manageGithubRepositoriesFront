@@ -12,7 +12,7 @@ export const leftBarItems = [
   { id: "organizations", name: "Organizacje" },
   { id: "sections", name: "Sekcje" },
   { id: "studentsList", name: "Lista studentów" },
-  { id: "addfromcsv", name: "Dodaj z CSV" },
+  { id: "addUsers", name: "Dodaj" },
   { id: "archive", name: "Archiwum" },
 ];
 
@@ -26,7 +26,7 @@ const iconButton = (icon) => {
       return <PeopleAltIcon />;
     case "archive":
       return <ArchiveIcon />;
-    case "addfromcsv":
+    case "addUsers":
       return <GroupAddIcon />;
     default:
       break;
