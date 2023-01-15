@@ -440,6 +440,31 @@ const SingleSection = () => {
     if (response.status === 200)
       navigate(`/organization/${section.organizationId}`);
   };
+  console.log(section);
+  const newIssue = async () => {
+    let repositories = [];
+
+    students.forEach((student) => {
+      if (student.isSelected)
+        repositories.push(`${student.id}-${section.name}-repo`);
+    });
+
+    const response = await fetch(`http://localhost:5000/github/createIssue`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        token: localStorage.getItem("accessToken"),
+        owner: section.organization,
+        repoName: repositories,
+        issueTitle: "Próba",
+        issueText:
+          "Pierwsza próba stworzenia jakiegokolwiek issue. Mam nadzieję, że udana",
+      }),
+    });
+  };
 
   const dialogScreen =
     dialog === 1 ? (
@@ -832,7 +857,7 @@ const SingleSection = () => {
                 >
                   Dodaj
                 </Button>
-                <Button variant="contained" size="large">
+                <Button variant="contained" size="large" onClick={newIssue}>
                   ISSUE
                 </Button>
               </Box>

@@ -1,26 +1,25 @@
 import { Box } from "@mui/system";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import React from "react";
-import GitHubLogin from "react-login-github";
 import classes from "./Login.module.scss";
 import GitHubIcon from "@mui/icons-material/GitHub";
-import { Alert, Collapse, IconButton, Typography } from "@mui/material";
-import { useState } from "react";
-import CloseIcon from "@mui/icons-material/Close";
+import { Button, Typography } from "@mui/material";
+import { useEffect } from "react";
 
 const Login = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const code = searchParams.get("code");
+  let isCodeUsed = false;
   const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
   const client_id = process.env.REACT_APP_CLIENT_ID;
-  const mainSite = process.env.REACT_APP_REDIRECT_URL;
-  const scope = "read:user, admin:org, repo";
-  const [isAlert, setIsAlert] = useState(false);
+  const redirectUrl = process.env.REACT_APP_REDIRECT_URL_LOGIN;
+  const scope = "read:user,admin:org,repo";
+  const githubUrl = `https://github.com/login/oauth/authorize?client_id=${client_id}&scope=${scope}&redirect_uri=${redirectUrl}`;
 
-  const loggedIn = localStorage.getItem("loggedIn");
-  if (loggedIn === "true") return <Navigate to="/" />;
-
-  const onSuccess = async (response) => {
-    await fetch(`${serverSite}/api/login?code=${response.code}`, {
+  const logIn = async () => {
+    isCodeUsed = true;
+    await fetch(`${serverSite}/api/login?code=${code}`, {
       method: "GET",
       headers: {
         Accept: "application/json",
@@ -57,7 +56,11 @@ const Login = () => {
     });
   };
 
-  const onFailure = (response) => setIsAlert(true);
+  useEffect(() => {
+    if (code && !isCodeUsed) logIn();
+  }, []);
+
+  if (localStorage.getItem("loggedIn") === "true") return <Navigate to="/" />;
 
   return (
     <Box className={classes.mainContainer}>
@@ -65,43 +68,32 @@ const Login = () => {
         <Typography variant="h4" className={classes.appName}>
           DISMaGR
         </Typography>
-        <GitHubLogin
-          clientId={client_id}
-          redirectUri={mainSite}
-          onSuccess={onSuccess}
-          onFailure={onFailure}
-          className={classes.loginButton}
-          scope={scope}
+        <Button
+          sx={{
+            margin: 0,
+            backgroundColor: "black",
+            color: "#D9D9D9",
+            borderRadius: "5px",
+            mt: "5px",
+            "&:hover": {
+              backgroundColor: "black",
+            },
+          }}
         >
-          <Box>
-            <GitHubIcon
-              color="primary"
-              fontSize="large"
-              className={classes.loginButtonContent}
-            />
-            <Typography variant="h5" className={classes.loginButtonContent}>
-              Zaloguj się
-            </Typography>
-          </Box>
-        </GitHubLogin>
+          <a href={githubUrl}>
+            <Box>
+              <GitHubIcon
+                color="primary"
+                fontSize="large"
+                className={classes.loginButtonContent}
+              />
+              <Typography variant="h5" className={classes.loginButtonContent}>
+                Zaloguj się
+              </Typography>
+            </Box>
+          </a>
+        </Button>
       </Box>
-      <Collapse in={isAlert}>
-        <Alert
-          action={
-            <IconButton
-              aria-label="close"
-              color="inherit"
-              size="small"
-              onClick={() => setIsAlert(false)}
-            >
-              <CloseIcon fontSize="inherit" />
-            </IconButton>
-          }
-          severity="error"
-        >
-          Przy logowaniu doszło do błędu! Zaloguj się ponownie :)
-        </Alert>
-      </Collapse>
     </Box>
   );
 };

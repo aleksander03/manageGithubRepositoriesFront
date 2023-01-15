@@ -16,6 +16,7 @@ app.get("/api/login", async (req, res) => {
     const clientId = process.env.REACT_APP_CLIENT_ID;
     const clientSecretId = process.env.REACT_APP_CLIENT_SECRET;
     const clientCode = req.query.code;
+    console.log(clientCode)
 
     await request.post(
       {
@@ -346,7 +347,7 @@ app.post("/api/addStudentsToSection", async (req, res) => {
           org: orgName,
           name: student.id + "-" + sectionName + "-repo",
           team_id: team.id,
-          private: true,
+          private: false,
           auto_init: true,
         });
 
@@ -410,9 +411,11 @@ app.post("/api/addStudentsFromCSV", (req, res) => {
           org: orgName,
           name: user.id + "-" + sectionName + "-repo",
           team_id: team.id,
-          private: true,
+          private: false,
           auto_init: true,
         });
+
+        console.log(repo)
 
         await client.createRepositoryForStudent(
           user.id,
@@ -497,6 +500,29 @@ app.delete("/api/deleteSection", async (req, res) => {
     console.error(error);
   }
 });
+
+app.post("/github/createIssue", (req, res) => {
+  try{
+    const token = req.body.token;
+    const owner = req.body.owner;
+    const repoName = req.body.repoName;
+    const issueTitle = req.body.issueTitle;
+    const issueText = req.body.issueText;
+
+    const octokit = new Octokit({auth: token})
+
+    repoName.forEach(async (repo) => {
+      const result = await octokit.issues.create({
+        owner: owner,
+        repo: repo,
+        title: issueTitle,
+        body: issueText,
+      });
+    })
+  }catch(error){
+    console.error(error)
+  }
+})
 
 app.get("/api/getStudents", async (req, res) => {
   try {
