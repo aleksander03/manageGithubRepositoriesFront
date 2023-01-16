@@ -36,6 +36,8 @@ import { useEffect } from "react";
 import Papa from "papaparse";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
+import PersonIcon from "@mui/icons-material/Person";
+import SchoolIcon from "@mui/icons-material/School";
 
 const SingleSection = () => {
   const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
@@ -148,14 +150,23 @@ const SingleSection = () => {
         <ListItem key={professor.githubLogin}>
           <ListItemButton
             role={undefined}
-            onClick={() => setSelectedProfessors(professor.githubLogin)}
+            // onClick={() => setSelectedStudents(student.githubLogin)}
             dense
           >
             <ListItemIcon>
-              <Checkbox checked={professor.isSelected} />
+              <SchoolIcon />
             </ListItemIcon>
-            <ListItemText primary={label} />
+            <ListItemText
+              primary={professor.name + " " + professor.surname}
+              secondary={professor.studentEmail}
+            >
+              {/* {professor.repositories.link} */}
+            </ListItemText>
           </ListItemButton>
+          <Checkbox
+            checked={professor.isSelected}
+            onClick={() => setSelectedProfessors(professor.githubLogin)}
+          />
         </ListItem>
       );
     });
@@ -167,16 +178,23 @@ const SingleSection = () => {
         <ListItem key={student.githubLogin}>
           <ListItemButton
             role={undefined}
-            onClick={() => setSelectedStudents(student.githubLogin)}
+            // onClick={() => setSelectedStudents(student.githubLogin)}
             dense
           >
             <ListItemIcon>
-              <Checkbox checked={student.isSelected} />
+              <PersonIcon />
             </ListItemIcon>
-            <ListItemText primary={student.name + " " + student.surname}>
+            <ListItemText
+              primary={student.name + " " + student.surname}
+              secondary={student.studentEmail}
+            >
               {student.repositories.link}
             </ListItemText>
           </ListItemButton>
+          <Checkbox
+            checked={student.isSelected}
+            onClick={() => setSelectedStudents(student.githubLogin)}
+          />
         </ListItem>
       );
     });
@@ -860,9 +878,6 @@ const SingleSection = () => {
                     onClick={() => selectAllProfessors()}
                     dense
                   >
-                    <ListItemIcon>
-                      <Checkbox checked={isAllProfessors} />
-                    </ListItemIcon>
                     <ListItemText
                       primary={
                         <center>
@@ -913,9 +928,6 @@ const SingleSection = () => {
                     onClick={() => selectAllStudents()}
                     dense
                   >
-                    <ListItemIcon>
-                      <Checkbox checked={isAllStudents} />
-                    </ListItemIcon>
                     <ListItemText
                       primary={
                         <center>

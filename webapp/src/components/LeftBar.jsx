@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 
 export const leftBarItems = [
   { id: "organizations", name: "Organizacje" },
-  { id: "sections", name: "Sekcje" },
+  { id: "teachersList", name: "Lista prowadzących" },
   { id: "studentsList", name: "Lista studentów" },
   { id: "addUsers", name: "Dodaj" },
   { id: "archive", name: "Archiwum" },
@@ -20,7 +20,7 @@ const iconButton = (icon) => {
   switch (icon) {
     case "organizations":
       return <GroupWorkIcon />;
-    case "sections":
+    case "teachersList":
       return <GroupIcon />;
     case "studentsList":
       return <PeopleAltIcon />;

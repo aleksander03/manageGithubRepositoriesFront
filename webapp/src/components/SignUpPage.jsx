@@ -16,7 +16,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import CloseIcon from "@mui/icons-material/Close";
 
-const SingUpStudentsPage = () => {
+const SingUpPage = () => {
   const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
   const urlParams = useParams();
   const [isCodeValid, setIsCodeValid] = useState(false);
@@ -223,4 +223,4 @@ const SingUpStudentsPage = () => {
   );
 };
 
-export default SingUpStudentsPage;
+export default SingUpPage;

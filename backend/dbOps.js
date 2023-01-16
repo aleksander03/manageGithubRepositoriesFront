@@ -631,3 +631,30 @@ export const createRepositoryForStudent = async (userId, link, sectionId) => {
 
   return true;
 };
+
+export const getTeachers = async (orderBy, order, filter, perPage, toSkip) => {
+  const teachers = await prisma.users.findMany({
+    skip: toSkip,
+    take: perPage,
+    select: {
+      id: true,
+      name: true,
+      surname: true,
+      githubLogin: true,
+      studentEmail: true,
+      usersToRoles: { select: { role: { select: { role: true } } } },
+    },
+    where: {
+      OR: [
+        { name: { contains: filter, mode: "insensitive" } },
+        { surname: { contains: filter, mode: "insensitive" } },
+        { githubLogin: { contains: filter, mode: "insensitive" } },
+        { studentEmail: { contains: filter, mode: "insensitive" } },
+      ],
+      usersToRoles: { some: { role: { role: { not: "Student" } } } },
+    },
+    orderBy: { [orderBy]: order },
+  });
+
+  return teachers;
+};

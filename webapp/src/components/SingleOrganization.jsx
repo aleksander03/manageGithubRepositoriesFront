@@ -652,18 +652,13 @@ const SingleOrganization = () => {
                 >
                   {sectionsList}
                 </List>
-                <Box className={classes.addButton}>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    onClick={() => handleOpenDialog(3)}
-                  >
-                    Dodaj
-                  </Button>
-                  <Button variant="contained" size="large">
-                    ISSUE
-                  </Button>
-                </Box>
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={() => handleOpenDialog(3)}
+                >
+                  Dodaj
+                </Button>
               </Box>
             </Box>
           </Box>

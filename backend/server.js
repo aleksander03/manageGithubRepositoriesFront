@@ -16,7 +16,7 @@ app.get("/api/login", async (req, res) => {
     const clientId = process.env.REACT_APP_CLIENT_ID;
     const clientSecretId = process.env.REACT_APP_CLIENT_SECRET;
     const clientCode = req.query.code;
-    console.log(clientCode)
+    console.log(clientCode);
 
     await request.post(
       {
@@ -415,7 +415,7 @@ app.post("/api/addStudentsFromCSV", (req, res) => {
           auto_init: true,
         });
 
-        console.log(repo)
+        console.log(repo);
 
         await client.createRepositoryForStudent(
           user.id,
@@ -502,14 +502,14 @@ app.delete("/api/deleteSection", async (req, res) => {
 });
 
 app.post("/github/createIssue", (req, res) => {
-  try{
+  try {
     const token = req.body.token;
     const owner = req.body.owner;
     const repoName = req.body.repoName;
     const issueTitle = req.body.issueTitle;
     const issueText = req.body.issueText;
 
-    const octokit = new Octokit({auth: token})
+    const octokit = new Octokit({ auth: token });
 
     repoName.forEach(async (repo) => {
       const result = await octokit.issues.create({
@@ -518,13 +518,38 @@ app.post("/github/createIssue", (req, res) => {
         title: issueTitle,
         body: issueText,
       });
-    })
+    });
 
     res.sendStatus(200);
-  }catch(error){
-    console.error(error)
+  } catch (error) {
+    console.error(error);
   }
-})
+});
+
+app.get("/api/getTeachers", async (req, res) => {
+  try {
+    const orderBy = req.query.orderBy;
+    const order = req.query.order;
+    const filter = req.query.filter;
+    const perPage = 100;
+    // const perPage = parseInt(req.query.perPage);
+    // const page = parseInt(req.query.page);
+    const page = 0;
+    const toSkip = perPage * page;
+
+    const teachers = await client.getTeachers(
+      orderBy,
+      order,
+      filter,
+      perPage,
+      toSkip
+    );
+
+    res.send(teachers);
+  } catch (error) {
+    console.error(error);
+  }
+});
 
 app.get("/api/getStudents", async (req, res) => {
   try {
@@ -572,54 +597,6 @@ app.get("/api/getStudentsCount", async (req, res) => {
     );
 
     res.send(studentsCount);
-  } catch (error) {
-    res.send(error);
-  }
-});
-
-app.get("/api/getSections", async (req, res) => {
-  try {
-    const orderBy = req.query.orderBy;
-    const order = req.query.order;
-    const filter = req.query.filter;
-    const userId = req.query.userId;
-    const perPage = parseInt(req.query.perPage);
-    const page = parseInt(req.query.page);
-    const toSkip = perPage * page;
-
-    const isAdmin = await client.isAdmin(userId);
-    const sections = await client.getSections(
-      orderBy,
-      order,
-      filter,
-      perPage,
-      toSkip,
-      isAdmin,
-      userId
-    );
-
-    res.send(sections);
-  } catch (error) {
-    res.send(error);
-  }
-});
-
-app.get("/api/getSectionsCount", async (req, res) => {
-  try {
-    const orderBy = req.query.orderBy;
-    const order = req.query.order;
-    const filter = req.query.filter;
-    const userId = req.query.userId;
-
-    const isAdmin = await client.isAdmin(userId);
-    const sectionsCount = await client.getSectionsCount(
-      orderBy,
-      filter,
-      userId,
-      isAdmin
-    );
-
-    res.send(sectionsCount);
   } catch (error) {
     res.send(error);
   }

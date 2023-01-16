@@ -4,11 +4,11 @@ import Login from "./Login";
 import AddFromCsv from "./AddFromCsv";
 import Archive from "./Archive";
 import Organizations from "./Organizations";
-import Sections from "./Sections";
+import TeachersList from "./TeachersList";
 import StudentsList from "./StudentsList";
 import SingleOrganization from "./SingleOrganization";
 import SingleSection from "./SingleSection";
-import SingUpStudentsPage from "./SignUpStudentsPage";
+import SingUpPage from "./SignUpPage";
 
 const App = () => {
   return (
@@ -19,7 +19,7 @@ const App = () => {
         <Route exact path="/organizations" element={<Organizations />} />
         <Route exact path="/addUsers" element={<AddFromCsv />} />
         <Route exact path="/archive" element={<Archive />} />
-        <Route exact path="/sections" element={<Sections />} />
+        <Route exact path="/teachersList" element={<TeachersList />} />
         <Route exact path="/studentslist" element={<StudentsList />} />
         <Route
           exact
@@ -27,11 +27,7 @@ const App = () => {
           element={<SingleOrganization />}
         />
         <Route exact path="/section/:id" element={<SingleSection />} />
-        <Route
-          exact
-          path="/section/form/:code"
-          element={<SingUpStudentsPage />}
-        />
+        <Route exact path="/section/form/:code" element={<SingUpPage />} />
       </Routes>
     </BrowserRouter>
   );
