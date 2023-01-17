@@ -1,6 +1,7 @@
 import {
   Box,
   Divider,
+  IconButton,
   Table,
   TableBody,
   TableCell,
@@ -10,6 +11,7 @@ import {
   TableRow,
   TableSortLabel,
   TextField,
+  Typography,
 } from "@mui/material";
 import React from "react";
 import LeftBar from "./LeftBar";
@@ -19,16 +21,25 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import classes from "./StudentsList.module.scss";
 import { useEffect } from "react";
+import GroupIcon from "@mui/icons-material/Group";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const headCells = [
   { id: "name", label: "Imię", numeric: false },
   { id: "surname", label: "Nazwisko", numeric: false },
   { id: "githubLogin", label: "GitHub Login", numeric: false },
   { id: "studentEmail", label: "Studencki Email", numeric: false },
+  { id: "delete", label: "", numeric: false },
 ];
 
 const StudentsList = () => {
-  const siteName = "Lista studentów";
+  const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
+  const siteName = (
+    <Box sx={{ display: "flex", alignItems: "center" }}>
+      <GroupIcon fontSize="large" sx={{ pr: 1 }} />
+      <Typography variant="h5">Lista studentów</Typography>
+    </Box>
+  );
   const [data, setData] = useState([]);
   const [countOfStudents, setCountOfStudents] = useState();
   const [orderBy, setOrderBy] = useState(headCells[0].id);
@@ -72,6 +83,30 @@ const StudentsList = () => {
       .then((body) => setCountOfStudents(body._all));
   };
 
+  const deleteUser = async (userId, githubLogin) => {
+    const response = await fetch(`${serverSite}/api/deleteUser`, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: userId,
+        token: localStorage.getItem("accessToken"),
+        githubLogin: githubLogin,
+      }),
+    });
+
+    if (response.status === 200) {
+      const newStudentsList = [];
+      data.forEach((student) => {
+        if (student.id !== userId) newStudentsList.push(student);
+      });
+      setData(newStudentsList);
+      setCountOfStudents((oldCount) => oldCount - 1);
+    }
+  };
+
   const tableTopBar = headCells.map((headCell) => {
     return (
       <TableCell
@@ -97,6 +132,11 @@ const StudentsList = () => {
         <TableCell>{row.surname}</TableCell>
         <TableCell>{row.githubLogin}</TableCell>
         <TableCell>{row.studentEmail}</TableCell>
+        <TableCell sx={{ width: 2 }}>
+          <IconButton onClick={() => deleteUser(row.id, row.githubLogin)}>
+            <DeleteIcon color="error" />
+          </IconButton>
+        </TableCell>
       </TableRow>
     );
   };
@@ -148,9 +188,7 @@ const StudentsList = () => {
               variant="filled"
               size="small"
               value={filter}
-              onChange={(event) =>
-                handleTyping(event.target.value.toUpperCase())
-              }
+              onChange={(event) => handleTyping(event.target.value)}
             />
           </Box>
           <TableContainer sx={{ height: "calc(100vh - 197px)" }}>

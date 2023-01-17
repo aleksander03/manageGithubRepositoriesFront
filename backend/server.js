@@ -400,36 +400,37 @@ app.post("/api/addStudentsFromCSV", (req, res) => {
           user = await client.addStudentToSectionFromCSV(student, sectionId);
         }
 
-        const { data: team } = await octokit.teams.create({
-          org: orgName,
-          name: user.id + "-" + sectionName,
-          privacy: "closed",
-          permission: "push",
-        });
+        if (user.id) {
+          const { data: team } = await octokit.teams.create({
+            org: orgName,
+            name: user.id + "-" + sectionName,
+            privacy: "closed",
+            permission: "push",
+          });
 
-        const { data: repo } = await octokit.repos.createInOrg({
-          org: orgName,
-          name: user.id + "-" + sectionName + "-repo",
-          team_id: team.id,
-          private: true,
-          auto_init: true,
-        });
+          const { data: repo } = await octokit.repos.createInOrg({
+            org: orgName,
+            name: user.id + "-" + sectionName + "-repo",
+            team_id: team.id,
+            private: true,
+            auto_init: true,
+          });
 
-        console.log(repo);
+          await client.createRepositoryForStudent(
+            user.id,
+            repo.html_url,
+            sectionId
+          );
 
-        await client.createRepositoryForStudent(
-          user.id,
-          repo.html_url,
-          sectionId
-        );
-
-        await octokit.teams.addOrUpdateMembershipForUserInOrg({
-          team_slug: team.slug,
-          org: orgName,
-          username: user.githubLogin,
-        });
+          await octokit.teams.addOrUpdateMembershipForUserInOrg({
+            team_slug: team.slug,
+            org: orgName,
+            username: user.githubLogin,
+          });
+        }
       } catch (e) {
-        await client.deleteUserToSectionRelation(student.githubLogin);
+        if (e.status !== 422)
+          await client.deleteUserToSectionRelation(student.githubLogin);
         console.error(e);
       }
     }
@@ -531,10 +532,8 @@ app.get("/api/getTeachers", async (req, res) => {
     const orderBy = req.query.orderBy;
     const order = req.query.order;
     const filter = req.query.filter;
-    const perPage = 100;
-    // const perPage = parseInt(req.query.perPage);
-    // const page = parseInt(req.query.page);
-    const page = 0;
+    const perPage = parseInt(req.query.perPage);
+    const page = parseInt(req.query.page);
     const toSkip = perPage * page;
 
     const teachers = await client.getTeachers(
@@ -546,6 +545,57 @@ app.get("/api/getTeachers", async (req, res) => {
     );
 
     res.send(teachers);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.put("/api/giveRole", (req, res) => {
+  try {
+    const role = req.query.role;
+    const userId = req.query.userId;
+
+    client.giveRole(role, userId);
+
+    res.sendStatus(201);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.delete("/api/deleteRole", (req, res) => {
+  try {
+    const role = req.query.role;
+    const userId = req.query.userId;
+
+    client.deleteRole(role, userId);
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.delete("/api/deleteUser", async (req, res) => {
+  try {
+    const userId = req.body.userId;
+    const githubLogin = req.body.githubLogin;
+    const token = req.body.token;
+
+    const octokit = new Octokit({ auth: token });
+    const orgs = await client.getUsersOrgs(userId);
+
+    orgs.forEach(async (org) => {
+      try {
+        await octokit.orgs.removeMember({ org: org, username: githubLogin });
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    await client.deleteUser(userId);
+
+    res.sendStatus(200)
   } catch (error) {
     console.error(error);
   }

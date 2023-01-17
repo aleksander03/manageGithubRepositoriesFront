@@ -38,13 +38,19 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import CloseIcon from "@mui/icons-material/Close";
 import PersonIcon from "@mui/icons-material/Person";
 import SchoolIcon from "@mui/icons-material/School";
+import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 
 const SingleSection = () => {
   const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
   const siteUrl = process.env.REACT_APP_REDIRECT_URL;
   const urlParams = useParams();
   const editedSectionId = urlParams.id;
-  const siteName = "Edycja sekcji";
+  const siteName = (
+    <Box sx={{ display: "flex", alignItems: "center" }}>
+      <PeopleAltIcon fontSize="large" sx={{ pr: 1 }} />
+      <Typography variant="h5">Edycja sekcji</Typography>
+    </Box>
+  );
   const [section, setSection] = useState({});
   const [professors, setProfessors] = useState([]);
   const [students, setStudents] = useState([]);
@@ -145,7 +151,6 @@ const SingleSection = () => {
   const professorsList =
     professors.length > 0 &&
     professors.map((professor) => {
-      const label = professor.name + " " + professor.surname;
       return (
         <ListItem key={professor.githubLogin}>
           <ListItemButton

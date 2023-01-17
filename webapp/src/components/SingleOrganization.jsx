@@ -26,12 +26,18 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import FindInPageIcon from "@mui/icons-material/FindInPage";
 import { useEffect } from "react";
+import GroupWorkIcon from "@mui/icons-material/GroupWork";
 
 const SingleOrganization = () => {
   const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
   const urlParams = useParams();
   const editedOrgId = urlParams.id;
-  const siteName = "Edycja organizacji";
+  const siteName = (
+    <Box sx={{ display: "flex", alignItems: "center" }}>
+      <GroupWorkIcon fontSize="large" sx={{ pr: 1 }} />
+      <Typography variant="h5">Edycja organizacji</Typography>
+    </Box>
+  );
   const [organization, setOrganization] = useState({});
   const [professors, setProfessors] = useState([]);
   const [sections, setSections] = useState([]);
@@ -249,10 +255,13 @@ const SingleOrganization = () => {
   const addSelectedProfessorsToOrg = () => {
     setDialog(0);
     const selectedProfessors = [];
-    availableProfessors.map(
-      (professor) =>
-        professor.isSelected && selectedProfessors.push(professor.id)
-    );
+    const newProfessorsTmp = [];
+    availableProfessors.forEach((professor) => {
+      if (professor.isSelected) {
+        selectedProfessors.push(professor.id);
+        newProfessorsTmp.push(professor);
+      }
+    });
 
     if (selectedProfessors) {
       const response = fetch(
@@ -269,7 +278,12 @@ const SingleOrganization = () => {
           }),
         }
       );
-      getOrganization();
+      if (professors.length > 0)
+        setProfessors((oldProfessors) => [
+          ...oldProfessors,
+          ...newProfessorsTmp,
+        ]);
+      else setProfessors(newProfessorsTmp);
     }
   };
 
@@ -306,10 +320,14 @@ const SingleOrganization = () => {
 
   const deleteSelectedProfessors = () => {
     const deletedProfessors = [];
-    professors.map(
-      (professor) =>
-        professor.isSelected && deletedProfessors.push(professor.id)
-    );
+    const newProfessorsList = [];
+    professors.forEach((professor) => {
+      if (professor.isSelected) {
+        deletedProfessors.push(professor.id);
+      } else {
+        newProfessorsList.push(professor);
+      }
+    });
     deletedProfessors.length > 0
       ? fetch(`http://localhost:5000/api/deleteProfessorsFromOrganization`, {
           method: "DELETE",
@@ -325,7 +343,7 @@ const SingleOrganization = () => {
       : alert("Musisz zaznaczyć cokolwiek!");
     setDialog(0);
     setIsAllProfessors(false);
-    getOrganization();
+    setProfessors(newProfessorsList);
   };
 
   const addSection = async () => {

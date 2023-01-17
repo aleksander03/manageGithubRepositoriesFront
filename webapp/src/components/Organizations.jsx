@@ -17,6 +17,7 @@ import {
   TableRow,
   TableSortLabel,
   TextField,
+  Typography,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import classesLayout from "./Layout.module.scss";
@@ -26,6 +27,7 @@ import { Divider } from "@mui/material";
 import LeftBar from "./LeftBar";
 import { useNavigate } from "react-router-dom";
 import CloseIcon from "@mui/icons-material/Close";
+import GroupWorkIcon from "@mui/icons-material/GroupWork";
 
 const headCells = [
   { id: "name", label: "Nazwa organizacji", numeric: false },
@@ -40,7 +42,12 @@ const headCells = [
 
 const Organizations = () => {
   const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
-  const siteName = "Organizacje";
+  const siteName = (
+    <Box sx={{ display: "flex", alignItems: "center" }}>
+      <GroupWorkIcon fontSize="large" sx={{ pr: 1 }} />
+      <Typography variant="h5">Organizacje</Typography>
+    </Box>
+  );
   const [data, setData] = useState([]);
   const [countOfStudents, setCountOfStudents] = useState();
   const [orderBy, setOrderBy] = useState(headCells[0].id);

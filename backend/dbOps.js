@@ -122,9 +122,12 @@ export const getStudents = async (
       studentEmail: true,
     },
     where: {
-      [orderBy]: {
-        contains: filter,
-      },
+      OR: [
+        { name: { contains: filter, mode: "insensitive" } },
+        { surname: { contains: filter, mode: "insensitive" } },
+        { githubLogin: { contains: filter, mode: "insensitive" } },
+        { studentEmail: { contains: filter, mode: "insensitive" } },
+      ],
       usersToRoles: { some: { role: { role: "Student" } } },
       ...(isAdmin
         ? {}
@@ -645,16 +648,74 @@ export const getTeachers = async (orderBy, order, filter, perPage, toSkip) => {
       usersToRoles: { select: { role: { select: { role: true } } } },
     },
     where: {
-      OR: [
-        { name: { contains: filter, mode: "insensitive" } },
-        { surname: { contains: filter, mode: "insensitive" } },
-        { githubLogin: { contains: filter, mode: "insensitive" } },
-        { studentEmail: { contains: filter, mode: "insensitive" } },
+      AND: [
+        {
+          OR: [
+            { name: { contains: filter, mode: "insensitive" } },
+            { surname: { contains: filter, mode: "insensitive" } },
+            { githubLogin: { contains: filter, mode: "insensitive" } },
+            { studentEmail: { contains: filter, mode: "insensitive" } },
+          ],
+        },
+        {
+          OR: [
+            { usersToRoles: { some: { role: { role: { not: "Student" } } } } },
+            { usersToRoles: { none: {} } },
+          ],
+        },
       ],
-      usersToRoles: { some: { role: { role: { not: "Student" } } } },
     },
     orderBy: { [orderBy]: order },
   });
 
-  return teachers;
+  const teachersCount = await prisma.users.count({
+    where: {
+      AND: [
+        {
+          OR: [
+            { name: { contains: filter, mode: "insensitive" } },
+            { surname: { contains: filter, mode: "insensitive" } },
+            { githubLogin: { contains: filter, mode: "insensitive" } },
+            { studentEmail: { contains: filter, mode: "insensitive" } },
+          ],
+        },
+        {
+          OR: [
+            { usersToRoles: { some: { role: { role: { not: "Student" } } } } },
+            { usersToRoles: { none: {} } },
+          ],
+        },
+      ],
+    },
+  });
+
+  const response = [teachers, teachersCount];
+
+  return response;
+};
+
+export const giveRole = async (role, userId) => {
+  await prisma.users.update({
+    where: { id: userId },
+    data: { usersToRoles: { create: { role: { connect: { role: role } } } } },
+  });
+};
+
+export const deleteRole = async (role, userId) => {
+  await prisma.usersToRoles.deleteMany({
+    where: { user: { id: userId }, role: { role: role } },
+  });
+};
+
+export const getUsersOrgs = async (userId) => {
+  const orgs = await prisma.organizations.findMany({
+    select: { name: true },
+    where: { organizationsToUsers: { some: { user: { id: userId } } } },
+  });
+
+  return orgs;
+};
+
+export const deleteUser = async (userId) => {
+  await prisma.users.delete({ where: { id: userId } });
 };

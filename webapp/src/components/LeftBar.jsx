@@ -4,7 +4,6 @@ import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import GroupIcon from "@mui/icons-material/Group";
 import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import ArchiveIcon from "@mui/icons-material/Archive";
-import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import classes from "./Layout.module.scss";
 import { useNavigate } from "react-router-dom";
 
@@ -12,7 +11,6 @@ export const leftBarItems = [
   { id: "organizations", name: "Organizacje" },
   { id: "teachersList", name: "Lista prowadzących" },
   { id: "studentsList", name: "Lista studentów" },
-  { id: "addUsers", name: "Dodaj" },
   { id: "archive", name: "Archiwum" },
 ];
 
@@ -26,8 +24,6 @@ const iconButton = (icon) => {
       return <PeopleAltIcon />;
     case "archive":
       return <ArchiveIcon />;
-    case "addUsers":
-      return <GroupAddIcon />;
     default:
       break;
   }

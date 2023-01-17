@@ -3,6 +3,7 @@ import {
   Button,
   Checkbox,
   Divider,
+  IconButton,
   Table,
   TableBody,
   TableCell,
@@ -12,6 +13,7 @@ import {
   TableRow,
   TableSortLabel,
   TextField,
+  Typography,
 } from "@mui/material";
 import React from "react";
 import LeftBar from "./LeftBar";
@@ -21,6 +23,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import classes from "./TeachersList.module.scss";
 import { useEffect } from "react";
+import GroupIcon from "@mui/icons-material/Group";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const headCells = [
   { id: "name", label: "Imię" },
@@ -29,10 +33,17 @@ const headCells = [
   { id: "studentEmail", label: "Uczelniany Email" },
   { id: "admin", label: "Administrator" },
   { id: "teacher", label: "Prowadzący" },
+  { id: "delete", label: "" },
 ];
 
 const TeachersList = () => {
-  const siteName = "Lista prowadzących";
+  const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
+  const siteName = (
+    <Box sx={{ display: "flex", alignItems: "center" }}>
+      <GroupIcon fontSize="large" sx={{ pr: 1 }} />
+      <Typography variant="h5">Lista prowadzących</Typography>
+    </Box>
+  );
   const [data, setData] = useState([]);
   const [countOfStudents, setCountOfStudents] = useState();
   const [orderBy, setOrderBy] = useState(headCells[0].id);
@@ -59,7 +70,7 @@ const TeachersList = () => {
       .then((data) => {
         const teachers = [];
 
-        data.forEach((teacher) => {
+        data[0].forEach((teacher) => {
           teachers.push({
             id: teacher.id,
             name: teacher.name,
@@ -79,24 +90,32 @@ const TeachersList = () => {
           });
         });
         setData(teachers);
+        setCountOfStudents(data[1]);
       });
   };
 
-  const getCountOfStudents = async (orderBy, filter) => {
-    await fetch(
-      `http://localhost:5000/api/getStudentsCount?orderBy=${orderBy}&filter=${filter}&userId=${localStorage.getItem(
-        "userId"
-      )}`,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      }
-    )
-      .then((response) => response.json())
-      .then((body) => setCountOfStudents(body._all));
+  const deleteUser = async (userId, githubLogin) => {
+    const response = await fetch(`${serverSite}/api/deleteUser`, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: userId,
+        token: localStorage.getItem("accessToken"),
+        githubLogin: githubLogin,
+      }),
+    });
+
+    if (response.status === 200) {
+      const newTeachersList = [];
+      data.forEach((teacher) => {
+        if (teacher.id !== userId) newTeachersList.push(teacher);
+      });
+      setData(newTeachersList);
+      setCountOfStudents((oldCount) => oldCount - 1);
+    }
   };
 
   const tableTopBar = headCells.map((headCell) => {
@@ -106,7 +125,9 @@ const TeachersList = () => {
         key={headCell.id}
         align={headCell.numeric ? "right" : "left"}
       >
-        {headCell.id === "admin" || headCell.id === "teacher" ? (
+        {headCell.id === "admin" ||
+        headCell.id === "teacher" ||
+        headCell.id === "delete" ? (
           headCell.label
         ) : (
           <TableSortLabel
@@ -123,20 +144,38 @@ const TeachersList = () => {
 
   const tableRow = (row) => {
     return (
-      <TableRow hover>
+      <TableRow
+        onClick={() => console.log("Szybkie sprawdzenie użytkownika")}
+        hover
+      >
         <TableCell>{row.name}</TableCell>
         <TableCell>{row.surname}</TableCell>
         <TableCell>{row.githubLogin}</TableCell>
         <TableCell>{row.studentEmail}</TableCell>
-        <TableCell>
+        <TableCell sx={{ width: 2 }}>
           <center>
-            <Checkbox checked={row.admin} />
+            <Checkbox
+              checked={row.admin}
+              onClick={(event) =>
+                handleChangeRole("admin", row.id, event.target.checked)
+              }
+            />
           </center>
         </TableCell>
-        <TableCell>
+        <TableCell sx={{ width: 2 }}>
           <center>
-            <Checkbox checked={row.teacher} />
+            <Checkbox
+              checked={row.teacher}
+              onClick={(event) =>
+                handleChangeRole("teacher", row.id, event.target.checked)
+              }
+            />
           </center>
+        </TableCell>
+        <TableCell sx={{ width: 2 }}>
+          <IconButton onClick={() => deleteUser(row.id, row.githubLogin)}>
+            <DeleteIcon color="error" />
+          </IconButton>
         </TableCell>
       </TableRow>
     );
@@ -157,18 +196,72 @@ const TeachersList = () => {
     setOrder(orderTmp);
     if (orderBy !== label) setOrderBy(label);
     getTeachers(label, orderTmp, filter, page, rowsPerPage);
-    getCountOfStudents(label, filter);
   };
 
   const handleTyping = (value) => {
     setFilter(value);
     getTeachers(orderBy, order, value, page, rowsPerPage);
-    getCountOfStudents(orderBy, value);
+  };
+
+  const handleChangeRole = async (role, userId, checked) => {
+    const roleName =
+      role === "admin"
+        ? "Administrator"
+        : role === "teacher"
+        ? "Profesor"
+        : "unknown";
+
+    if (roleName !== "unknown") {
+      if (checked) {
+        const response = await fetch(
+          `${serverSite}/api/giveRole?role=${roleName}&userId=${userId}`,
+          {
+            method: "PUT",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (response.status === 201) {
+          const newTeachersList = [];
+          data.forEach((teacher) => {
+            if (teacher.id === userId)
+              newTeachersList.push({ ...teacher, [role]: checked });
+            else newTeachersList.push(teacher);
+          });
+
+          setData(newTeachersList);
+        }
+      } else {
+        const response = await fetch(
+          `${serverSite}/api/deleteRole?role=${roleName}&userId=${userId}`,
+          {
+            method: "DELETE",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (response.status === 200) {
+          const newTeachersList = [];
+          data.forEach((teacher) => {
+            if (teacher.id === userId)
+              newTeachersList.push({ ...teacher, [role]: checked });
+            else newTeachersList.push(teacher);
+          });
+
+          setData(newTeachersList);
+        }
+      }
+    }
   };
 
   useEffect(() => {
     getTeachers(orderBy, order, filter, page, rowsPerPage);
-    getCountOfStudents(orderBy, filter);
   }, []);
 
   return (
