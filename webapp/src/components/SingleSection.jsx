@@ -67,6 +67,8 @@ const SingleSection = () => {
   const [issueTitle, setIssueTitle] = useState("");
   const [issueText, setIssueText] = useState("");
   const [alert, setAlert] = useState(0);
+  const [templateRepositoryName, setTemplateRepositoryName] = useState("");
+  const [useTemplate, setUseTemplate] = useState(false);
   const navigate = useNavigate();
 
   const getSection = async () => {
@@ -86,16 +88,16 @@ const SingleSection = () => {
     if (response.status === 200) {
       response.json().then((body) => {
         setSection({
-          id: body[0].id,
-          name: body[0].name,
-          organizationId: body[0].organization.id,
-          organization: body[0].organization.name,
+          id: body[0][0].id,
+          name: body[0][0].name,
+          organizationId: body[0][0].organization.id,
+          organization: body[0][0].organization.name,
         });
         const professorsList = [];
         const studentsList = [];
 
-        body[0].sectionsToUsers.length > 0 &&
-          body[0].sectionsToUsers.forEach((professor) => {
+        body[0][0].sectionsToUsers.length > 0 &&
+          body[0][0].sectionsToUsers.forEach((professor) => {
             professorsList.push({
               id: professor.user.id,
               name: professor.user.name,
@@ -127,7 +129,7 @@ const SingleSection = () => {
         console.log(studentsList);
         setProfessors(professorsList);
         setStudents(studentsList);
-        setSectionName(body[0].name);
+        setSectionName(body[0][0].name);
       });
     }
   };
@@ -155,23 +157,18 @@ const SingleSection = () => {
         <ListItem key={professor.githubLogin}>
           <ListItemButton
             role={undefined}
-            // onClick={() => setSelectedStudents(student.githubLogin)}
+            onClick={() => setSelectedProfessors(professor.githubLogin)}
             dense
           >
             <ListItemIcon>
               <SchoolIcon />
             </ListItemIcon>
             <ListItemText
-              primary={professor.name + " " + professor.surname}
+              primary={`${professor.name} ${professor.surname}`}
               secondary={professor.studentEmail}
-            >
-              {/* {professor.repositories.link} */}
-            </ListItemText>
+            />
+            <Checkbox checked={professor.isSelected} />
           </ListItemButton>
-          <Checkbox
-            checked={professor.isSelected}
-            onClick={() => setSelectedProfessors(professor.githubLogin)}
-          />
         </ListItem>
       );
     });
@@ -183,23 +180,20 @@ const SingleSection = () => {
         <ListItem key={student.githubLogin}>
           <ListItemButton
             role={undefined}
-            // onClick={() => setSelectedStudents(student.githubLogin)}
+            onClick={() => setSelectedStudents(student.githubLogin)}
             dense
           >
             <ListItemIcon>
               <PersonIcon />
             </ListItemIcon>
             <ListItemText
-              primary={student.name + " " + student.surname}
+              primary={`${student.name} ${student.surname}`}
               secondary={student.studentEmail}
             >
               {student.repositories.link}
             </ListItemText>
+            <Checkbox checked={student.isSelected} />
           </ListItemButton>
-          <Checkbox
-            checked={student.isSelected}
-            onClick={() => setSelectedStudents(student.githubLogin)}
-          />
         </ListItem>
       );
     });
@@ -234,19 +228,17 @@ const SingleSection = () => {
       }
     );
 
-    if (response.status === 200)
-      response.json().then((body) => {
-        console.log(body);
-        setAddStudentsLink(`${siteUrl}section/form/${body}`);
-      });
+    if (response.status === 200) {
+      const body = await response.json();
+      setAddStudentsLink(`${siteUrl}section/form/${body}`);
+    }
   };
 
   const addStudentsToSection = async () => {
-    const studentsToAdd = [];
-
-    studentsInQueue.map((student) =>
-      studentsToAdd.push({ id: student.id, githubLogin: student.githubLogin })
-    );
+    const studentsToAdd = studentsInQueue.map((student) => ({
+      id: student.id,
+      githubLogin: student.githubLogin,
+    }));
 
     const response = await fetch(`${serverSite}/api/addStudentsToSection`, {
       method: "POST",
@@ -260,6 +252,7 @@ const SingleSection = () => {
         token: localStorage.getItem("accessToken"),
         sectionName: section.name,
         orgName: section.organization,
+        templateName: templateRepositoryName,
       }),
     });
 
@@ -270,67 +263,69 @@ const SingleSection = () => {
   };
 
   const addStudentsFromCSV = async () => {
-    await fetch(`${serverSite}/api/addStudentsFromCSV`, {
+    const requestBody = {
+      users: studentsFromCSV,
+      sectionId: section.id,
+      sectionName: section.name,
+      orgName: section.organization,
+      token: localStorage.getItem("accessToken"),
+      templateName: templateRepositoryName,
+    };
+
+    const response = await fetch(`${serverSite}/api/addStudentsFromCSV`, {
       method: "POST",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        users: studentsFromCSV,
-        sectionId: section.id,
-        sectionName: section.name,
-        orgName: section.organization,
-        token: localStorage.getItem("accessToken"),
-      }),
-    }).then((response) => {
-      if (response.status === 200) getSection();
-      setDialog(0);
+      body: JSON.stringify(requestBody),
     });
+
+    if (response.status === 200) getSection();
+
+    setDialog(0);
   };
 
-  const setSelectedProfessors = (githubLogin) => {
-    const newProfessorsList = professors.map((professor) => {
-      if (professor.githubLogin === githubLogin) {
-        return { ...professor, isSelected: !professor.isSelected };
+  const selectItem = (list, githubLogin, setList) => {
+    const newList = list.map((item) => {
+      if (item.githubLogin === githubLogin) {
+        return { ...item, isSelected: !item.isSelected };
       }
-      return professor;
+      return item;
     });
 
-    setProfessors(newProfessorsList);
+    setList(newList);
   };
 
-  const setSelectedStudents = (githubLogin) => {
-    const newStudentsList = students.map((student) => {
-      if (student.githubLogin === githubLogin) {
-        return { ...student, isSelected: !student.isSelected };
-      }
-      return student;
-    });
+  const setSelectedProfessors = (githubLogin) =>
+    selectItem(professors, githubLogin, setProfessors);
 
-    setStudents(newStudentsList);
-  };
+  const setSelectedStudents = (githubLogin) =>
+    selectItem(students, githubLogin, setStudents);
 
   const selectAllProfessors = () => {
-    const newProfessorsList = professors.map((professor) => {
-      return { ...professor, isSelected: !isAllProfessors };
-    });
+    const newProfessorsList = professors.map((professor) => ({
+      ...professor,
+      isSelected: !isAllProfessors,
+    }));
+
     setProfessors(newProfessorsList);
     setIsAllProfessors((oldValue) => !oldValue);
   };
 
   const selectAllStudents = () => {
-    const newStudentsList = students.map((section) => {
-      return { ...section, isSelected: !isAllStudents };
-    });
+    const newStudentsList = students.map((section) => ({
+      ...section,
+      isSelected: !isAllStudents,
+    }));
+
     setStudents(newStudentsList);
     setIsAllStudents((oldValue) => !oldValue);
   };
 
-  const getAvailableProfessors = async (filter) => {
-    const filterTmp = filter !== undefined ? filter : filterProfessors;
+  const getAvailableProfessors = async (filter = filterProfessors) => {
     const response = await fetch(
-      `http://localhost:5000/api/getAvailableProfessorsForSection?sectionId=${section.id}&filter=${filterTmp}`,
+      `${serverSite}/api/getAvailableProfessorsForSection?sectionId=${section.id}&filter=${filter}`,
       {
         method: "GET",
         headers: {
@@ -339,109 +334,115 @@ const SingleSection = () => {
         },
       }
     );
-    if (response.status === 200)
-      response.json().then((body) => {
-        const newAvailableProfessors =
-          body.length > 0
-            ? body.map((professor) => {
-                return { ...professor, isSelected: false };
-              })
-            : [];
-        setAvailableProfessors(newAvailableProfessors);
-      });
+
+    if (response.status === 200) {
+      const body = await response.json();
+
+      const newAvailableProfessors =
+        body.length > 0
+          ? body.map((professor) => ({ ...professor, isSelected: false }))
+          : [];
+
+      setAvailableProfessors(newAvailableProfessors);
+    }
   };
 
   const setSelectedAvailableProfessors = (id) => {
     const newProfessorsList = availableProfessors.map((professor) => {
-      if (professor.id === id) {
-        return { ...professor, isSelected: !professor.isSelected };
-      }
-      return professor;
+      return professor.id === id
+        ? { ...professor, isSelected: !professor.isSelected }
+        : professor;
     });
+
     setAvailableProfessors(newProfessorsList);
   };
 
-  const addSelectedProfessorsToSection = () => {
+  const addSelectedProfessorsToSection = async () => {
     setDialog(0);
-    const selectedProfessors = [];
-    availableProfessors.map(
-      (professor) =>
-        professor.isSelected && selectedProfessors.push(professor.id)
+
+    const selectedProfessors = availableProfessors
+      .filter((professor) => professor.isSelected)
+      .map((professor) => professor.id);
+    const newProfessors = availableProfessors.filter(
+      (professor) => professor.isSelected
     );
 
     if (selectedProfessors) {
-      const response = fetch(
-        `http://localhost:5000/api/addProfessorsToSection`,
-        {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            sectionId: section.id,
-            userId: selectedProfessors,
-          }),
-        }
-      );
+      const response = await fetch(`${serverSite}/api/addProfessorsToSection`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sectionId: section.id,
+          userId: selectedProfessors,
+        }),
+      });
 
-      getSection();
+      if (response.status === 201) {
+        setProfessors((oldProfessorsList) => [
+          ...oldProfessorsList,
+          ...newProfessors,
+        ]);
+      }
     }
   };
 
-  const deleteSelectedProfessors = () => {
-    const deletedProfessors = [];
-    professors.map(
-      (professor) =>
-        professor.isSelected && deletedProfessors.push(professor.id)
+  const deleteSelectedProfessors = async () => {
+    const deletedProfessors = professors
+      .filter((professor) => professor.isSelected)
+      .map((professor) => professor.id);
+    const newProfessorsList = professors.filter(
+      (professor) => !professor.isSelected
     );
-    deletedProfessors.length > 0
-      ? fetch(`http://localhost:5000/api/deleteProfessorsFromSection`, {
-          method: "DELETE",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            sectionId: section.id,
-            userId: deletedProfessors,
-          }),
-        })
-      : alert("Musisz zaznaczyć cokolwiek!");
-    setDialog(0);
-    setIsAllProfessors(false);
-    getSection();
+
+    const response = await fetch(
+      `${serverSite}/api/deleteProfessorsFromSection`,
+      {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sectionId: section.id,
+          userId: deletedProfessors,
+        }),
+      }
+    );
+
+    if (response.status === 200) {
+      setDialog(0);
+      setProfessors(newProfessorsList);
+    }
   };
 
   const availableProfessorsList =
     availableProfessors.length > 0
-      ? availableProfessors.map((professor) => {
-          return (
-            <ListItem>
-              <ListItemButton
-                role={undefined}
-                onClick={() => setSelectedAvailableProfessors(professor.id)}
-                dense
-              >
-                <ListItemIcon>
-                  <Checkbox checked={professor.isSelected} />
-                </ListItemIcon>
-                <ListItemText
-                  primary={
-                    <>
-                      <Typography variant="h6">
-                        {professor.name + " " + professor.surname}
-                      </Typography>
-                      <Typography variant="h7">
-                        {professor.githubLogin}
-                      </Typography>
-                    </>
-                  }
-                />
-              </ListItemButton>
-            </ListItem>
-          );
-        })
+      ? availableProfessors.map((professor) => (
+          <ListItem>
+            <ListItemButton
+              role={undefined}
+              onClick={() => setSelectedAvailableProfessors(professor.id)}
+              dense
+            >
+              <ListItemIcon>
+                <Checkbox checked={professor.isSelected} />
+              </ListItemIcon>
+              <ListItemText
+                primary={
+                  <>
+                    <Typography variant="h6">{`${professor.name} ${professor.surname}`}</Typography>
+                    <Typography variant="h7">
+                      {professor.githubLogin}
+                    </Typography>
+                  </>
+                }
+              />
+            </ListItemButton>
+          </ListItem>
+        ))
       : null;
 
   const handleOpenDeleteDialog = () => {
@@ -455,7 +456,7 @@ const SingleSection = () => {
 
   const deleteSection = async () => {
     const response = await fetch(
-      `http://localhost:5000/api/deleteSection?sectionId=${
+      `${serverSite}/api/deleteSection?sectionId=${
         section.id
       }&userId=${localStorage.getItem("userId")}`,
       {
@@ -480,7 +481,7 @@ const SingleSection = () => {
           repositories.push(`${student.id}-${section.name}-repo`);
       });
 
-      const response = await fetch(`http://localhost:5000/github/createIssue`, {
+      const response = await fetch(`${serverSite}/github/createIssue`, {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -591,6 +592,35 @@ const SingleSection = () => {
       <>
         <DialogTitle>Dodawanie studentów z pliku CSV</DialogTitle>
         <DialogContent>
+          <DialogContentText>
+            Czy chcesz użyć przykładowego repozytorium?
+            <Checkbox
+              value={useTemplate}
+              onClick={(event) => {
+                event.target.checked
+                  ? setUseTemplate(event.target.checked)
+                  : setTemplateRepositoryName("");
+                setUseTemplate(event.target.checked);
+              }}
+            />
+          </DialogContentText>
+          {useTemplate && (
+            <>
+              <TextField
+                label="Nazwa repozytorium"
+                type="search"
+                variant="filled"
+                sx={{ minWidth: 452 }}
+                value={templateRepositoryName}
+                onChange={(event) =>
+                  setTemplateRepositoryName(event.target.value)
+                }
+              />
+              <DialogContentText color="error">
+                Uwaga! Repozytorium powinno być w tej samej organizacji!
+              </DialogContentText>
+            </>
+          )}
           <DialogContentText>Plik powinien zawierać kolumny:</DialogContentText>
           <DialogContentText>
             name, surname, githubLogin, studentEmail
@@ -679,6 +709,35 @@ const SingleSection = () => {
               })}
             </TableBody>
           </Table>
+          <DialogContentText>
+            Czy chcesz użyć przykładowego repozytorium?
+            <Checkbox
+              value={useTemplate}
+              onClick={(event) => {
+                event.target.checked
+                  ? setUseTemplate(event.target.checked)
+                  : setTemplateRepositoryName("");
+                setUseTemplate(event.target.checked);
+              }}
+            />
+          </DialogContentText>
+          {useTemplate && (
+            <>
+              <TextField
+                label="Nazwa repozytorium"
+                type="search"
+                variant="filled"
+                sx={{ minWidth: 452 }}
+                value={templateRepositoryName}
+                onChange={(event) =>
+                  setTemplateRepositoryName(event.target.value)
+                }
+              />
+              <DialogContentText color="error">
+                Uwaga! Repozytorium powinno być w tej samej organizacji!
+              </DialogContentText>
+            </>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialog(0)}>Anuluj</Button>
@@ -724,24 +783,24 @@ const SingleSection = () => {
       >
         Brak tytułu issue!
       </Alert>
-    ) : alert === 2 ? (
-      <Alert
-        action={
-          <IconButton
-            aria-label="close"
-            color="error"
-            size="small"
-            onClick={() => setAlert(0)}
-          >
-            <CloseIcon fontSize="inherit" />
-          </IconButton>
-        }
-        severity="error"
-      >
-        Nie udało się wysłać issue!
-      </Alert>
     ) : (
-      <></>
+      alert === 2 && (
+        <Alert
+          action={
+            <IconButton
+              aria-label="close"
+              color="error"
+              size="small"
+              onClick={() => setAlert(0)}
+            >
+              <CloseIcon fontSize="inherit" />
+            </IconButton>
+          }
+          severity="error"
+        >
+          Nie udało się wysłać issue!
+        </Alert>
+      )
     );
 
   useEffect(() => {
@@ -760,21 +819,6 @@ const SingleSection = () => {
         </Box>
         <Box className={classesLayout.content}>
           <Box className={classes.topContainer}>
-            <Box>
-              <TextField
-                label="Nazwa sekcji"
-                type="search"
-                variant="filled"
-                size="small"
-                InputProps={{ className: classes.topLeftTextFieldInput }}
-                sx={{ pr: "10px" }}
-                value={sectionName}
-                onChange={(event) => setSectionName(event.target.value)}
-              />
-              <Button variant="contained" size="large">
-                ZMIEŃ
-              </Button>
-            </Box>
             <Box className={classes.topRightContainer}>
               <Box className={classes.topRightButton}>
                 <Button variant="contained" size="large">

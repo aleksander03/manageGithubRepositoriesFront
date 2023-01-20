@@ -1,5 +1,11 @@
 import {
   Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Divider,
   IconButton,
   Table,
@@ -18,7 +24,6 @@ import LeftBar from "./LeftBar";
 import TopBar from "./TopBar";
 import classesLayout from "./Layout.module.scss";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import classes from "./StudentsList.module.scss";
 import { useEffect } from "react";
 import GroupIcon from "@mui/icons-material/Group";
@@ -47,30 +52,17 @@ const StudentsList = () => {
   const [filter, setFilter] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowPerPage] = useState(10);
-  const navigate = useNavigate();
+  const [dialog, setDialog] = useState(0);
+  const [chosenStudent, setChosenStudent] = useState({});
+  const [chosenStudentRepositories, setChosenStudentRepositories] = useState(
+    []
+  );
 
   const getStudents = async (orderBy, order, filter, page, rows) => {
-    await fetch(
-      `http://localhost:5000/api/getStudents?perPage=${rows}&page=${page}&orderBy=${orderBy}&order=${order}&filter=${filter}&userId=${localStorage.getItem(
-        "userId"
-      )}`,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      }
-    )
-      .then((response) => response.json())
-      .then((data) => setData(data));
-  };
+    const userId = localStorage.getItem("userId");
 
-  const getCountOfStudents = async (orderBy, filter) => {
-    await fetch(
-      `http://localhost:5000/api/getStudentsCount?orderBy=${orderBy}&filter=${filter}&userId=${localStorage.getItem(
-        "userId"
-      )}`,
+    const response = await fetch(
+      `${serverSite}/api/getStudents?perPage=${rows}&page=${page}&orderBy=${orderBy}&order=${order}&filter=${filter}&userId=${userId}`,
       {
         method: "GET",
         headers: {
@@ -78,9 +70,12 @@ const StudentsList = () => {
           "Content-Type": "application/json",
         },
       }
-    )
-      .then((response) => response.json())
-      .then((body) => setCountOfStudents(body._all));
+    );
+
+    const data = await response.json();
+
+    setData(data[0]);
+    setCountOfStudents(data[1]._all);
   };
 
   const deleteUser = async (userId, githubLogin) => {
@@ -98,11 +93,7 @@ const StudentsList = () => {
     });
 
     if (response.status === 200) {
-      const newStudentsList = [];
-      data.forEach((student) => {
-        if (student.id !== userId) newStudentsList.push(student);
-      });
-      setData(newStudentsList);
+      setData(data.filter((student) => student.id !== userId));
       setCountOfStudents((oldCount) => oldCount - 1);
     }
   };
@@ -128,12 +119,23 @@ const StudentsList = () => {
   const tableRow = (row) => {
     return (
       <TableRow hover>
-        <TableCell>{row.name}</TableCell>
-        <TableCell>{row.surname}</TableCell>
-        <TableCell>{row.githubLogin}</TableCell>
-        <TableCell>{row.studentEmail}</TableCell>
+        <TableCell onClick={() => getStudentData(row.id)}>{row.name}</TableCell>
+        <TableCell onClick={() => getStudentData(row.id)}>
+          {row.surname}
+        </TableCell>
+        <TableCell onClick={() => getStudentData(row.id)}>
+          {row.githubLogin}
+        </TableCell>
+        <TableCell onClick={() => getStudentData(row.id)}>
+          {row.studentEmail}
+        </TableCell>
         <TableCell sx={{ width: 2 }}>
-          <IconButton onClick={() => deleteUser(row.id, row.githubLogin)}>
+          <IconButton
+            onClick={() => {
+              setChosenStudent({ githubLogin: row.githubLogin, id: row.id });
+              setDialog(1);
+            }}
+          >
             <DeleteIcon color="error" />
           </IconButton>
         </TableCell>
@@ -141,33 +143,43 @@ const StudentsList = () => {
     );
   };
 
-  const tableBody =
-    data.length > 1 ? (
-      data.map((row) => tableRow(row))
-    ) : data.length === 1 ? (
-      tableRow(data[0])
-    ) : (
-      <></>
-    );
+  const tableBody = data?.length ? data.map((row) => tableRow(row)) : <></>;
 
   const handleSort = (label) => {
     const orderTmp =
       orderBy !== label ? "desc" : order === "asc" ? "desc" : "asc";
     setOrder(orderTmp);
-    if (orderBy !== label) setOrderBy(label);
+    setOrderBy(label);
     getStudents(label, orderTmp, filter, page, rowsPerPage);
-    getCountOfStudents(label, filter);
   };
 
   const handleTyping = (value) => {
     setFilter(value);
     getStudents(orderBy, order, value, page, rowsPerPage);
-    getCountOfStudents(orderBy, value);
+  };
+
+  const getStudentData = async (userId) => {
+    const response = await fetch(
+      `${serverSite}/api/getUsersRepositories?userId=${userId}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (response.status === 200) {
+      const data = await response.json();
+
+      setChosenStudentRepositories(data);
+      setDialog(2);
+    }
   };
 
   useEffect(() => {
     getStudents(orderBy, order, filter, page, rowsPerPage);
-    getCountOfStudents(orderBy, filter);
   }, []);
 
   return (
@@ -218,6 +230,68 @@ const StudentsList = () => {
           />
         </Box>
       </Box>
+      <Dialog
+        open={dialog}
+        onClose={() => setDialog(0)}
+        PaperProps={{ style: { backgroundColor: "#d9d9d9", minWidth: 800 } }}
+      >
+        {dialog === 1 ? (
+          <>
+            <DialogTitle color="error">Usuwanie prowadzącego</DialogTitle>
+            <DialogContent>
+              <DialogContentText color="error">
+                Czy na pewno chcesz usunąć użytkownika o loginie{" "}
+                {chosenStudent.githubLogin}?
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button color="error" onClick={() => setDialog(0)}>
+                Anuluj
+              </Button>
+              <Button
+                color="error"
+                onClick={() => {
+                  deleteUser(chosenStudent.id, chosenStudent.githubLogin);
+                  setDialog(0);
+                }}
+              >
+                Tak
+              </Button>
+            </DialogActions>
+          </>
+        ) : (
+          dialog === 2 && (
+            <>
+              <DialogTitle>Repozytoria studenta</DialogTitle>
+              <DialogContent>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Organizacja</TableCell>
+                      <TableCell>Sekcja</TableCell>
+                      <TableCell>Link do repozytorium</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {chosenStudentRepositories.length > 0 &&
+                      chosenStudentRepositories.map((student) => {
+                        return (
+                          <TableRow key={student.id}>
+                            <TableCell>
+                              {student.section?.organization?.name}
+                            </TableCell>
+                            <TableCell>{student.section?.name}</TableCell>
+                            <TableCell>{student.link}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                  </TableBody>
+                </Table>
+              </DialogContent>
+            </>
+          )
+        )}
+      </Dialog>
     </Box>
   );
 };

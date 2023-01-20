@@ -4,20 +4,6 @@
     margin-right: auto;
 }
 
-.topContainer{
-    display: flex;
-    justify-content: flex-end;
-}
-
-.topRightContainer{
-    display: inline-flex;
-    justify-content: flex-end;
-}
-
-.topRightButton{
-    padding-right: 10px;
-}
-
 .contentContainer{
     display: inline-flex;
     justify-content: center;
@@ -33,11 +19,4 @@
 .contentList{
     max-height: calc(80vh - 75px - 10px - 42.25px - 50px);
     overflow: auto;
-}
-
-.addButton{
-    display: flex;
-    justify-content: space-between;
-    padding-top: 15px;
-    padding-left: 30px;
 }

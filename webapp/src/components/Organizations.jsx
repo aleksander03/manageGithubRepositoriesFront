@@ -49,7 +49,7 @@ const Organizations = () => {
     </Box>
   );
   const [data, setData] = useState([]);
-  const [countOfStudents, setCountOfStudents] = useState();
+  const [countOfOrgs, setCountOfOrgs] = useState();
   const [orderBy, setOrderBy] = useState(headCells[0].id);
   const [order, setOrder] = useState("asc");
   const [filter, setFilter] = useState("");
@@ -59,7 +59,7 @@ const Organizations = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [alertType, setAlertType] = useState(0);
   const navigate = useNavigate();
-
+  console.log(countOfOrgs);
   const getOrganizations = async (orderBy, order, filter, page, rows) => {
     await fetch(
       `http://localhost:5000/api/getOrganizations?perPage=${rows}&page=${page}&orderBy=${orderBy}&order=${order}&filter=${filter}&userId=${localStorage.getItem(
@@ -74,24 +74,10 @@ const Organizations = () => {
       }
     )
       .then((response) => response.json())
-      .then((data) => setData(data));
-  };
-
-  const getOrganizationsCount = async (orderBy, filter) => {
-    await fetch(
-      `http://localhost:5000/api/getOrganizationsCount?orderBy=${orderBy}&filter=${filter}&userId=${localStorage.getItem(
-        "userId"
-      )}`,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      }
-    )
-      .then((response) => response.json())
-      .then((body) => setCountOfStudents(body._all));
+      .then((data) => {
+        setData(data[0]);
+        setCountOfOrgs(data[1]._all);
+      });
   };
 
   const findOrganization = async () => {
@@ -176,13 +162,11 @@ const Organizations = () => {
     setOrder(orderTmp);
     if (orderBy !== label) setOrderBy(label);
     getOrganizations(label, orderTmp, filter, page, rowsPerPage);
-    getOrganizationsCount(label, filter);
   };
 
   const handleTyping = (value) => {
     setFilter(value);
     getOrganizations(orderBy, order, value, page, rowsPerPage);
-    getOrganizationsCount(orderBy, value);
   };
 
   const handleOpenDialog = () => {
@@ -197,7 +181,6 @@ const Organizations = () => {
 
   useEffect(() => {
     getOrganizations(orderBy, order, filter, page, rowsPerPage);
-    getOrganizationsCount(orderBy, filter);
   }, []);
 
   return (
@@ -236,7 +219,7 @@ const Organizations = () => {
           </TableContainer>
           <TablePagination
             rowsPerPageOptions={[10, 25, 100]}
-            count={countOfStudents}
+            count={countOfOrgs}
             component="div"
             rowsPerPage={rowsPerPage}
             page={page}

@@ -8,7 +8,6 @@ import {
   DialogContentText,
   DialogTitle,
   Divider,
-  IconButton,
   List,
   ListItem,
   ListItemButton,
@@ -27,6 +26,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import FindInPageIcon from "@mui/icons-material/FindInPage";
 import { useEffect } from "react";
 import GroupWorkIcon from "@mui/icons-material/GroupWork";
+import SchoolIcon from "@mui/icons-material/School";
 
 const SingleOrganization = () => {
   const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
@@ -43,7 +43,6 @@ const SingleOrganization = () => {
   const [sections, setSections] = useState([]);
   const [orgName, setOrgName] = useState(organization.name);
   const [isAllProfessors, setIsAllProfessors] = useState(false);
-  const [isAllSections, setIsAllSections] = useState(false);
   const [filterProfessors, setFilterProfessors] = useState("");
   const [availableProfessors, setAvailableProfessors] = useState([]);
   const [newSectionName, setNewSectionName] = useState("");
@@ -52,49 +51,41 @@ const SingleOrganization = () => {
   const navigate = useNavigate();
 
   const professorsList =
-    professors.length > 0 ? (
-      professors.map((person) => {
-        const label = person.name + " " + person.surname;
-        return (
-          <ListItem key={person.githubLogin}>
-            <ListItemButton
-              role={undefined}
-              onClick={() => setSelectedProfessors(person.githubLogin)}
-              dense
-            >
-              <ListItemIcon>
-                <Checkbox checked={person.isSelected} />
-              </ListItemIcon>
-              <ListItemText primary={label} />
-            </ListItemButton>
-          </ListItem>
-        );
-      })
-    ) : (
-      <></>
-    );
+    professors.length > 0 &&
+    professors.map((professor) => {
+      console.log(professor);
+      return (
+        <ListItem key={professor.githubLogin}>
+          <ListItemButton
+            role={undefined}
+            onClick={() => setSelectedProfessors(professor.githubLogin)}
+            dense
+          >
+            <ListItemIcon>
+              <SchoolIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary={`${professor.name} ${professor.surname}`}
+              secondary={professor.studentEmail}
+            />
+            <Checkbox checked={professor.isSelected} />
+          </ListItemButton>
+        </ListItem>
+      );
+    });
 
   const sectionsList =
     sections.length > 0 ? (
       sections.map((section) => {
         return (
-          <ListItem
-            key={section.id}
-            secondaryAction={
-              <IconButton edge="right" aria-label="sectionPage">
-                <FindInPageIcon
-                  onClick={() => navigate(`/section/${section.id}`)}
-                />
-              </IconButton>
-            }
-          >
+          <ListItem key={section.id}>
             <ListItemButton
               role={undefined}
-              onClick={() => setSelectedSections(section.id)}
+              onClick={() => navigate(`/section/${section.id}`)}
               dense
             >
               <ListItemIcon>
-                <Checkbox checked={section.isSelected} />
+                <FindInPageIcon />
               </ListItemIcon>
               <ListItemText primary={section.name} />
             </ListItemButton>
@@ -115,15 +106,6 @@ const SingleOrganization = () => {
     setProfessors(newProfessorsList);
   };
 
-  const setSelectedSections = (id) => {
-    const newSectionsList = sections.map((section) => {
-      if (section.id === id)
-        return { ...section, isSelected: !section.isSelected };
-      return section;
-    });
-    setSections(newSectionsList);
-  };
-
   const selectAllProfessors = () => {
     const newProfessorsList = professors.map((professor) => {
       return { ...professor, isSelected: !isAllProfessors };
@@ -132,17 +114,9 @@ const SingleOrganization = () => {
     setIsAllProfessors((oldValue) => !oldValue);
   };
 
-  const selectAllSections = () => {
-    const newSectionsList = sections.map((section) => {
-      return { ...section, isSelected: !isAllSections };
-    });
-    setSections(newSectionsList);
-    setIsAllSections((oldValue) => !oldValue);
-  };
-
   const getOrganization = async () => {
     const response = await fetch(
-      `http://localhost:5000/api/getOrganization?id=${editedOrgId}&userId=${localStorage.getItem(
+      `${serverSite}/api/getOrganization?id=${editedOrgId}&userId=${localStorage.getItem(
         "userId"
       )}`,
       {
@@ -156,14 +130,15 @@ const SingleOrganization = () => {
     if (response.status === 200) {
       response.json().then((body) => {
         const org = {
-          name: body[0].name,
-          githubName: body[0].githubName,
-          id: body[0].id,
-          link: body[0].link,
+          name: body[0][0].name,
+          githubName: body[0][0].githubName,
+          id: body[0][0].id,
+          link: body[0][0].link,
         };
+
         const sections =
-          body[0].sections.length > 0
-            ? body[0].sections.map((row) => {
+          body[0][0].sections.length > 0
+            ? body[0][0].sections.map((row) => {
                 return {
                   id: row.id,
                   name: row.name,
@@ -171,6 +146,7 @@ const SingleOrganization = () => {
                 };
               })
             : {};
+
         const professors =
           body[1].length > 0
             ? body[1].map((row) => {
@@ -179,6 +155,7 @@ const SingleOrganization = () => {
                   name: row.name,
                   surname: row.surname,
                   githubLogin: row.githubLogin,
+                  studentEmail: row.studentEmail,
                   isSelected: false,
                 };
               })
@@ -221,7 +198,7 @@ const SingleOrganization = () => {
   const getAvailableProfessors = async (filter) => {
     const filterTmp = filter !== undefined ? filter : filterProfessors;
     const response = await fetch(
-      `http://localhost:5000/api/getAvailableProfessors?orgId=${editedOrgId}&filter=${filterTmp}`,
+      `${serverSite}/api/getAvailableProfessors?orgId=${editedOrgId}&filter=${filterTmp}`,
       {
         method: "GET",
         headers: {
@@ -264,20 +241,17 @@ const SingleOrganization = () => {
     });
 
     if (selectedProfessors) {
-      const response = fetch(
-        `http://localhost:5000/api/addProfessorsToOrganization`,
-        {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            orgId: editedOrgId,
-            userId: selectedProfessors,
-          }),
-        }
-      );
+      const response = fetch(`${serverSite}/api/addProfessorsToOrganization`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orgId: editedOrgId,
+          userId: selectedProfessors,
+        }),
+      });
       if (professors.length > 0)
         setProfessors((oldProfessors) => [
           ...oldProfessors,
@@ -329,7 +303,7 @@ const SingleOrganization = () => {
       }
     });
     deletedProfessors.length > 0
-      ? fetch(`http://localhost:5000/api/deleteProfessorsFromOrganization`, {
+      ? fetch(`${serverSite}/api/deleteProfessorsFromOrganization`, {
           method: "DELETE",
           headers: {
             Accept: "application/json",
@@ -349,7 +323,7 @@ const SingleOrganization = () => {
   const addSection = async () => {
     handleCloseDialog();
     const response = await fetch(
-      `http://localhost:5000/api/addSectionToOrg?orgId=${editedOrgId}&userId=${localStorage.getItem(
+      `${serverSite}/api/addSectionToOrg?orgId=${editedOrgId}&userId=${localStorage.getItem(
         "userId"
       )}&name=${newSectionName}`,
       {
@@ -365,7 +339,7 @@ const SingleOrganization = () => {
 
   const deleteOrganization = async () => {
     const response = await fetch(
-      `http://localhost:5000/api/deleteOrganization?orgId=${editedOrgId}&userId=${localStorage.getItem(
+      `${serverSite}/api/deleteOrganization?orgId=${editedOrgId}&userId=${localStorage.getItem(
         "userId"
       )}`,
       {
@@ -379,15 +353,22 @@ const SingleOrganization = () => {
     if (response.status === 200) navigate("/organizations");
   };
 
-  // const changeOrgLocalName = (newName) => {
+  const changeOrgLocalName = async () => {
+    const response = await fetch(
+      `${serverSite}/api/changeOrgLocalName?orgId=${organization.id}&newOrgName=${orgName}`,
+      {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-  // }
+    if (response.status === 200) getOrganization();
+  };
 
   // const archiveOrganization = () => {
-
-  // }
-
-  // const createIssue = () => {
 
   // }
 
@@ -502,7 +483,11 @@ const SingleOrganization = () => {
                   onChange={(event) => setOrgName(event.target.value)}
                   defaultValue=" "
                 />
-                <Button variant="contained" size="large">
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={changeOrgLocalName}
+                >
                   ZMIEŃ
                 </Button>
               </Box>
@@ -600,9 +585,6 @@ const SingleOrganization = () => {
                       onClick={() => selectAllProfessors()}
                       dense
                     >
-                      <ListItemIcon>
-                        <Checkbox checked={isAllProfessors} />
-                      </ListItemIcon>
                       <ListItemText
                         primary={
                           <center>
@@ -645,14 +627,7 @@ const SingleOrganization = () => {
                   className={classes.contentList}
                 >
                   <ListItem>
-                    <ListItemButton
-                      role={undefined}
-                      onClick={() => selectAllSections()}
-                      dense
-                    >
-                      <ListItemIcon>
-                        <Checkbox checked={isAllSections} />
-                      </ListItemIcon>
+                    <ListItemButton role={undefined} dense>
                       <ListItemText
                         primary={
                           <center>

@@ -5,8 +5,6 @@ import { IconButton, Typography } from "@mui/material";
 import LanguageIcon from "@mui/icons-material/Language";
 import SettingsIcon from "@mui/icons-material/Settings";
 import classes from "./TopBar.module.scss";
-import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
-import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import "./GlobalCssMenu.css";
@@ -19,8 +17,15 @@ const TopBar = (props) => {
 
   const logout = () => {
     localStorage.setItem("loggedIn", false);
+    localStorage.setItem("userId", null);
+    localStorage.setItem("accessToken", null);
     handleClose();
     navigate("/login");
+  };
+
+  const profile = () => {
+    handleClose();
+    navigate("/profile");
   };
 
   const handleMenu = (event) => {
@@ -52,20 +57,6 @@ const TopBar = (props) => {
           size="large"
           className={classes.option}
           style={{ background: "transparent" }}
-        >
-          <LanguageIcon />
-        </IconButton>
-        <IconButton
-          size="large"
-          className={classes.option}
-          style={{ background: "transparent" }}
-        >
-          <NotificationsNoneIcon />
-        </IconButton>
-        <IconButton
-          size="large"
-          className={classes.option}
-          style={{ background: "transparent" }}
           onClick={handleMenu}
         >
           <SettingsIcon />
@@ -85,7 +76,7 @@ const TopBar = (props) => {
           open={Boolean(anchorEl)}
           onClose={handleClose}
         >
-          <MenuItem onClick={handleClose}>Profil</MenuItem>
+          <MenuItem onClick={profile}>Profil</MenuItem>
           <MenuItem onClick={logout}>Wyloguj się</MenuItem>
         </Menu>
       </Box>

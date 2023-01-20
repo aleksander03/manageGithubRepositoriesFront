@@ -9,22 +9,38 @@ export const isAdmin = async (userId) => {
       usersToRoles: { some: { role: { role: "Administrator" } } },
     },
   });
+
   return isAdmin;
 };
 
-export const orgsIdsForUser = async (userId) => {
-  const orgIds = await prisma.organizations.findMany({
+export const sectionsIdsForUser = async (userId) => {
+  const sectionsIds = await prisma.sections.findMany({
     select: { id: true },
-    where: { organizationsToUsers: { some: { user: { id: userId } } } },
+    where: { sectionsToUsers: { some: { user: { id: userId } } } },
   });
-  return orgIds;
+
+  return sectionsIds;
 };
 
 export const findUserBygithubLogin = async (githubLogin) => {
   const user = await prisma.users.findUnique({
     where: { githubLogin: githubLogin },
   });
+
   return user;
+};
+
+export const changeUserData = async (userData) => {
+  await prisma.users.update({
+    where: { githubLogin: userData.githubLogin },
+    data: {
+      name: userData.name,
+      surname: userData.surname,
+      studentEmail: userData.studentEmail,
+    },
+  });
+
+  return true;
 };
 
 export const createNewUserFromGit = async (githubLogin, name, surname) => {
@@ -32,9 +48,10 @@ export const createNewUserFromGit = async (githubLogin, name, surname) => {
     data: {
       githubLogin: githubLogin,
       name: name,
-      surname: namesurname,
+      surname: surname,
     },
   });
+
   return user;
 };
 
@@ -77,16 +94,8 @@ export const getOrganizations = async (
       [orderBy]: order,
     },
   });
-  return organizations;
-};
 
-export const getOrganizationsCount = async (
-  orderBy,
-  filter,
-  userId,
-  isAdmin
-) => {
-  const organizationsCount = await prisma.organizations.count({
+  const count = await prisma.organizations.count({
     select: {
       _all: true,
     },
@@ -99,7 +108,8 @@ export const getOrganizationsCount = async (
         : { organizationsToUsers: { some: { user: { id: userId } } } }),
     },
   });
-  return organizationsCount;
+
+  return [organizations, count];
 };
 
 export const getStudents = async (
@@ -132,17 +142,14 @@ export const getStudents = async (
       ...(isAdmin
         ? {}
         : {
-            organizationsToUsers: { some: { organization: { OR: orgsIds } } },
+            sectionsToUsers: { some: { organization: { OR: orgsIds } } },
           }),
     },
     orderBy: {
       [orderBy]: order,
     },
   });
-  return students;
-};
 
-export const getStudentsCount = async (orderBy, filter, orgsIds, isAdmin) => {
   const studentsCount = await prisma.users.count({
     select: {
       _all: true,
@@ -159,70 +166,15 @@ export const getStudentsCount = async (orderBy, filter, orgsIds, isAdmin) => {
           }),
     },
   });
-  return studentsCount;
-};
 
-export const getSections = async (
-  orderBy,
-  order,
-  filter,
-  perPage,
-  toSkip,
-  isAdmin,
-  userId
-) => {
-  const sections = await prisma.sections.findMany({
-    skip: toSkip,
-    take: perPage,
-    select: {
-      id: true,
-      name: true,
-      _count: {
-        select: {
-          sectionsToUsers: {
-            where: {
-              user: { usersToRoles: { some: { role: { role: "Student" } } } },
-            },
-          },
-        },
-      },
-    },
-    where: {
-      [orderBy]: {
-        contains: filter,
-      },
-      ...(isAdmin
-        ? {}
-        : { sectionsToUsers: { some: { user: { id: userId } } } }),
-    },
-    orderBy: {
-      [orderBy]: order,
-    },
-  });
-  return sections;
-};
-
-export const getSectionsCount = async (orderBy, filter, userId, isAdmin) => {
-  const sectionsCount = await prisma.sections.count({
-    select: {
-      _all: true,
-    },
-    where: {
-      [orderBy]: {
-        contains: filter,
-      },
-      ...(isAdmin
-        ? {}
-        : { sectionsToUsers: { some: { user: { id: userId } } } }),
-    },
-  });
-  return sectionsCount;
+  return [students, studentsCount];
 };
 
 export const checkIfOrgExist = async (githubName) => {
   const organization = await prisma.organizations.findUnique({
     where: { githubName: githubName },
   });
+
   return organization;
 };
 
@@ -235,14 +187,22 @@ export const addExistingOrganization = async (name, githubName, link) => {
 };
 
 export const getOrganization = async (id, userId, isAdmin) => {
-  const organization = await prisma.organizations.findUnique({
+  const sectionsIsAdmin = isAdmin
+    ? true
+    : {
+        where: { sectionsToUsers: { some: { user: { id: userId } } } },
+      };
+
+  const organization = await prisma.organizations.findMany({
     where: {
       id: id,
       ...(isAdmin
         ? {}
-        : { organizationsToUsers: { some: { user: { userId: userId } } } }),
+        : { organizationsToUsers: { some: { user: { id: userId } } } }),
     },
-    include: { sections: true },
+    include: {
+      sections: sectionsIsAdmin,
+    },
   });
 
   const professors = await prisma.users.findMany({
@@ -325,7 +285,7 @@ export const deleteOrganization = async (orgId) => {
 };
 
 export const getSection = async (sectionId, userId, isAdmin) => {
-  const section = await prisma.sections.findUnique({
+  const section = await prisma.sections.findMany({
     select: {
       id: true,
       name: true,
@@ -517,6 +477,7 @@ export const addStudentFromCSV = async (student, sectionId) => {
       githubLogin: student.githubLogin,
       studentEmail: student.studentEmail,
       sectionsToUsers: { create: { section: { connect: { id: sectionId } } } },
+      usersToRoles: { create: { role: { connect: { role: "Student" } } } },
     },
   });
 
@@ -718,4 +679,28 @@ export const getUsersOrgs = async (userId) => {
 
 export const deleteUser = async (userId) => {
   await prisma.users.delete({ where: { id: userId } });
+};
+
+export const getUsersRepositories = async (userId) => {
+  const repositories = await prisma.repositories.findMany({
+    where: { repositoriesToUsers: { some: { user: { id: userId } } } },
+    include: {
+      section: {
+        select: {
+          id: true,
+          name: true,
+          organization: { select: { id: true, name: true } },
+        },
+      },
+    },
+  });
+
+  return repositories;
+};
+
+export const changeOrgLocalName = async (orgId, newOrgName) => {
+  await prisma.organizations.update({
+    where: { id: orgId },
+    data: { name: newOrgName },
+  });
 };

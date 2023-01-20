@@ -2,6 +2,11 @@ import {
   Box,
   Button,
   Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Divider,
   IconButton,
   Table,
@@ -20,7 +25,6 @@ import LeftBar from "./LeftBar";
 import TopBar from "./TopBar";
 import classesLayout from "./Layout.module.scss";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import classes from "./TeachersList.module.scss";
 import { useEffect } from "react";
 import GroupIcon from "@mui/icons-material/Group";
@@ -51,11 +55,12 @@ const TeachersList = () => {
   const [filter, setFilter] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowPerPage] = useState(10);
-  const navigate = useNavigate();
+  const [dialog, setDialog] = useState(false);
+  const [chosenTeacher, setChosenTeacher] = useState({});
 
   const getTeachers = async (orderBy, order, filter, page, rows) => {
     await fetch(
-      `http://localhost:5000/api/getTeachers?perPage=${rows}&page=${page}&orderBy=${orderBy}&order=${order}&filter=${filter}&userId=${localStorage.getItem(
+      `${serverSite}/api/getTeachers?perPage=${rows}&page=${page}&orderBy=${orderBy}&order=${order}&filter=${filter}&userId=${localStorage.getItem(
         "userId"
       )}`,
       {
@@ -173,7 +178,12 @@ const TeachersList = () => {
           </center>
         </TableCell>
         <TableCell sx={{ width: 2 }}>
-          <IconButton onClick={() => deleteUser(row.id, row.githubLogin)}>
+          <IconButton
+            onClick={() => {
+              setChosenTeacher({ githubLogin: row.githubLogin, id: row.id });
+              setDialog(true);
+            }}
+          >
             <DeleteIcon color="error" />
           </IconButton>
         </TableCell>
@@ -312,6 +322,33 @@ const TeachersList = () => {
           />
         </Box>
       </Box>
+      <Dialog
+        open={dialog}
+        onClose={() => setDialog(false)}
+        PaperProps={{ style: { backgroundColor: "#d9d9d9" } }}
+      >
+        <DialogTitle color="error">Usuwanie prowadzącego</DialogTitle>
+        <DialogContent>
+          <DialogContentText color="error">
+            Czy na pewno chcesz usunąć użytkownika o loginie{" "}
+            {chosenTeacher.githubLogin}?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button color="error" onClick={() => setDialog(false)}>
+            Anuluj
+          </Button>
+          <Button
+            color="error"
+            onClick={() => {
+              deleteUser(chosenTeacher.id, chosenTeacher.githubLogin);
+              setDialog(false);
+            }}
+          >
+            Tak
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

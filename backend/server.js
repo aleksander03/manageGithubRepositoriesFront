@@ -42,7 +42,7 @@ app.post("/api/getUser", async (req, res) => {
     const response = await octokit.request("GET /user", {});
     let user = await client.findUserBygithubLogin(response.data.login);
 
-    if (!user) {
+    if (user === null) {
       let name;
       if (response.data.name) {
         name = response.data.name.split(" ");
@@ -55,11 +55,39 @@ app.post("/api/getUser", async (req, res) => {
         name[0],
         name[1]
       );
+      console.log(user);
     }
 
     res.send(user);
   } catch (error) {
     res.send(error);
+  }
+});
+
+app.get("/api/getUserByLogin", async (req, res) => {
+  try {
+    const githubLogin = req.query.githubLogin;
+    const userId = req.query.userId;
+
+    const user = await client.findUserBygithubLogin(githubLogin);
+    const orgs = await client.getUsersOrgs(userId);
+
+    res.send([user, orgs]);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.put("/api/changeUserData", async (req, res) => {
+  try {
+    const userData = req.body.userData;
+
+    const user = await client.changeUserData(userData);
+
+    if (user) res.sendStatus(200);
+    else res.sendStatus(418);
+  } catch (error) {
+    console.error(error);
   }
 });
 
@@ -115,26 +143,6 @@ app.get("/api/getOrganizations", async (req, res) => {
   }
 });
 
-app.get("/api/getOrganizationsCount", async (req, res) => {
-  try {
-    const orderBy = req.query.orderBy;
-    const filter = req.query.filter;
-    const userId = req.query.userId;
-
-    const isAdmin = await client.isAdmin(userId);
-    const organizationsCount = await client.getOrganizationsCount(
-      orderBy,
-      filter,
-      userId,
-      isAdmin
-    );
-
-    res.send(organizationsCount);
-  } catch (error) {
-    res.send(error);
-  }
-});
-
 app.get("/api/getOrganization", async (req, res) => {
   try {
     const id = parseInt(req.query.id);
@@ -142,6 +150,7 @@ app.get("/api/getOrganization", async (req, res) => {
 
     const isAdmin = await client.isAdmin(userId);
     const organization = await client.getOrganization(id, userId, isAdmin);
+
     if (organization) {
       res.send(organization);
     } else {
@@ -332,23 +341,40 @@ app.post("/api/addStudentsToSection", async (req, res) => {
     const sectionName = req.body.sectionName;
     const token = req.body.token;
     const orgName = req.body.orgName;
+    const template_name = req.body.templateName;
     const octokit = new Octokit({ auth: token });
 
     users.map(async (student) => {
       try {
+        let repo;
+
+        if (template_name !== "") {
+          const { data: repoTmp } = await octokit.repos.createInOrg({
+            org: orgName,
+            name: student.id + "-" + sectionName + "-repo",
+            private: true,
+            auto_init: true,
+          });
+
+          repo = repoTmp;
+        } else {
+          const { data: repoTmp } = await octokit.repos.createUsingTemplate({
+            template_owner: orgName,
+            template_repo: "template",
+            name: student.id + "-" + sectionName + "-repo",
+            private: true,
+            owner: orgName,
+          });
+
+          repo = repoTmp;
+        }
+
         const { data: team } = await octokit.teams.create({
           org: orgName,
           name: student.id + "-" + sectionName,
           privacy: "closed",
           permission: "push",
-        });
-
-        const { data: repo } = await octokit.repos.createInOrg({
-          org: orgName,
-          name: student.id + "-" + sectionName + "-repo",
-          team_id: team.id,
-          private: true,
-          auto_init: true,
+          repo_names: [`${orgName}/${repo.name}`],
         });
 
         await client.createRepositoryForStudent(
@@ -381,6 +407,7 @@ app.post("/api/addStudentsFromCSV", (req, res) => {
   const token = req.body.token;
   const orgName = req.body.orgName;
   const sectionName = req.body.sectionName;
+  const template_name = req.body.templateName;
   const octokit = new Octokit({ auth: token });
 
   studentsList.map(async (student) => {
@@ -396,24 +423,43 @@ app.post("/api/addStudentsFromCSV", (req, res) => {
 
         if (!isStudentExist) {
           user = await client.addStudentFromCSV(student, sectionId);
+          console.log("Jeżeli nie istnieje", user);
         } else {
           user = await client.addStudentToSectionFromCSV(student, sectionId);
+          console.log("Jeżeli istnieje", user);
+          if (!user) throw "User exist in section!";
         }
 
         if (user.id) {
+          let repo;
+
+          if (template_name !== "") {
+            const { data: repoTmp } = await octokit.repos.createInOrg({
+              org: orgName,
+              name: user.id + "-" + sectionName + "-repo",
+              private: true,
+              auto_init: true,
+            });
+
+            repo = repoTmp;
+          } else {
+            const { data: repoTmp } = await octokit.repos.createUsingTemplate({
+              template_owner: orgName,
+              template_repo: "template",
+              name: user.id + "-" + sectionName + "-repo",
+              private: true,
+              owner: orgName,
+            });
+
+            repo = repoTmp;
+          }
+
           const { data: team } = await octokit.teams.create({
             org: orgName,
             name: user.id + "-" + sectionName,
             privacy: "closed",
             permission: "push",
-          });
-
-          const { data: repo } = await octokit.repos.createInOrg({
-            org: orgName,
-            name: user.id + "-" + sectionName + "-repo",
-            team_id: team.id,
-            private: true,
-            auto_init: true,
+            repo_names: [`${orgName}/${repo.name}`],
           });
 
           await client.createRepositoryForStudent(
@@ -427,9 +473,11 @@ app.post("/api/addStudentsFromCSV", (req, res) => {
             org: orgName,
             username: user.githubLogin,
           });
+
+          console.log("finish");
         }
       } catch (e) {
-        if (e.status !== 422)
+        if (e.status !== 422 && e !== "User exist in section!")
           await client.deleteUserToSectionRelation(student.githubLogin);
         console.error(e);
       }
@@ -595,7 +643,7 @@ app.delete("/api/deleteUser", async (req, res) => {
 
     await client.deleteUser(userId);
 
-    res.sendStatus(200)
+    res.sendStatus(200);
   } catch (error) {
     console.error(error);
   }
@@ -610,9 +658,8 @@ app.get("/api/getStudents", async (req, res) => {
     const perPage = parseInt(req.query.perPage);
     const page = parseInt(req.query.page);
     const toSkip = perPage * page;
-    //czemu szukam po id organizacji? Lepiej chyba po id sekcji
     const isAdmin = await client.isAdmin(userId);
-    const orgsIds = isAdmin ? [] : await client.orgsIdsForUser(userId);
+    const sectionsIds = isAdmin ? [] : await client.sectionsIdsForUser(userId);
 
     const students = await client.getStudents(
       orderBy,
@@ -621,7 +668,7 @@ app.get("/api/getStudents", async (req, res) => {
       perPage,
       toSkip,
       isAdmin,
-      orgsIds
+      sectionsIds
     );
 
     res.send(students);
@@ -630,31 +677,29 @@ app.get("/api/getStudents", async (req, res) => {
   }
 });
 
-app.get("/api/getStudentsCount", async (req, res) => {
+app.get("/api/getUsersRepositories", async (req, res) => {
   try {
-    const orderBy = req.query.orderBy;
-    const filter = req.query.filter;
     const userId = req.query.userId;
 
-    const isAdmin = await client.isAdmin(userId);
-    const orgsIds = isAdmin ? [] : await client.orgsIdsForUser(userId);
+    const repositories = await client.getUsersRepositories(userId);
 
-    const studentsCount = await client.getStudentsCount(
-      orderBy,
-      filter,
-      orgsIds,
-      isAdmin
-    );
-
-    res.send(studentsCount);
+    res.send(repositories);
   } catch (error) {
-    res.send(error);
+    console.error(error);
   }
 });
 
-app.get("/test", async (req, res) => {
-  const test = await client.test();
-  res.send(test);
+app.put("/api/changeOrgLocalName", async (req, res) => {
+  try {
+    const orgId = parseInt(req.query.orgId);
+    const newOrgName = req.query.newOrgName;
+
+    await client.changeOrgLocalName(orgId, newOrgName);
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error(error);
+  }
 });
 
 app.get("/", function (req, res) {

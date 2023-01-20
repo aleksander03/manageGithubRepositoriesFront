@@ -6,11 +6,13 @@ import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import ArchiveIcon from "@mui/icons-material/Archive";
 import classes from "./Layout.module.scss";
 import { useNavigate } from "react-router-dom";
+import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
 
 export const leftBarItems = [
   { id: "organizations", name: "Organizacje" },
   { id: "teachersList", name: "Lista prowadzących" },
   { id: "studentsList", name: "Lista studentów" },
+  { id: "repositoriesList", name: "Lista repozytoriów" },
   { id: "archive", name: "Archiwum" },
 ];
 
@@ -24,12 +26,14 @@ const iconButton = (icon) => {
       return <PeopleAltIcon />;
     case "archive":
       return <ArchiveIcon />;
+    case "repositoriesList":
+      return <LibraryBooksIcon />;
     default:
       break;
   }
 };
 
-const LeftBar = (props) => {
+const LeftBar = () => {
   const navigate = useNavigate();
   const leftBarItemsList = leftBarItems.map((row) => {
     return (
