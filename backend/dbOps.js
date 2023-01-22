@@ -44,8 +44,14 @@ export const changeUserData = async (userData) => {
 };
 
 export const createNewUserFromGit = async (githubLogin, name, surname) => {
+  const id = uuidv4().slice(0, 8);
+  const isIdExist = await prisma.users.findUnique({ where: { id: id } });
+
+  if (isIdExist) return false;
+
   const user = await prisma.users.create({
     data: {
+      id: id,
       githubLogin: githubLogin,
       name: name,
       surname: surname,
@@ -430,8 +436,14 @@ export const addStudentFromLink = async (
   studentEmail,
   urlCode
 ) => {
+  const id = uuidv4().slice(0, 8);
+  const isIdExist = await prisma.users.findUnique({ where: { id: id } });
+
+  if (isIdExist) return false;
+
   const student = await prisma.users.create({
     data: {
+      id: id,
       name: name,
       surname: surname,
       githubLogin: githubLogin,
@@ -470,8 +482,14 @@ export const addStudentsToSection = (students, sectionId) => {
 };
 
 export const addStudentFromCSV = async (student, sectionId) => {
+  const id = uuidv4().slice(0, 8);
+  const isIdExist = await prisma.users.findUnique({ where: { id: id } });
+
+  if (isIdExist) return false;
+
   const user = await prisma.users.create({
     data: {
+      id: id,
       name: student.name,
       surname: student.surname,
       githubLogin: student.githubLogin,

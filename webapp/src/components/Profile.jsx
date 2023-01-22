@@ -33,10 +33,11 @@ const Profile = () => {
   const [alert, setAlert] = useState(0);
 
   const getUser = async () => {
-    await fetch(
-      `${serverSite}/api/getUserByLogin?githubLogin=${localStorage.getItem(
-        "githubLogin"
-      )}&userId=${localStorage.getItem("userId")}`,
+    const githubLogin = localStorage.getItem("githubLogin");
+    const userId = localStorage.getItem("userId");
+
+    const response = await fetch(
+      `${serverSite}/api/getUserByLogin?githubLogin=${githubLogin}&userId=${userId}`,
       {
         method: "GET",
         headers: {
@@ -44,32 +45,41 @@ const Profile = () => {
           "Content-Type": "application/json",
         },
       }
-    )
-      .then((response) => response.json())
-      .then((data) => {
-        if (data[0] === null) localStorage.setItem("loggedIn", false);
-        setUserData(data[0]);
-        setRepositoriesList(data[1]);
-      });
+    );
+
+    const data = await response.json();
+
+    if (data[0] === null) localStorage.setItem("loggedIn", false);
+
+    setUserData(data[0]);
+    setRepositoriesList(data[1]);
   };
 
   const changeUserData = async () => {
-    const response = await fetch(`${serverSite}/api/changeUserData`, {
-      method: "PUT",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ userData: userData }),
-    });
+    if (
+      userData.name !== "" &&
+      userData.surname !== "" &&
+      userData.studentEmail !== ""
+    ) {
+      const response = await fetch(`${serverSite}/api/changeUserData`, {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userData: userData }),
+      });
 
-    if (response.status === 200) {
-      localStorage.setItem("name", userData.name);
-      localStorage.setItem("surname", userData.surname);
-      localStorage.setItem("studentEmail", userData.studentEmail);
-      setAlert(1);
+      if (response.status === 200) {
+        localStorage.setItem("name", userData.name);
+        localStorage.setItem("surname", userData.surname);
+        localStorage.setItem("studentEmail", userData.studentEmail);
+        setAlert(1);
+      } else {
+        setAlert(2);
+      }
     } else {
-      setAlert(2);
+      setAlert(3);
     }
   };
 
@@ -181,13 +191,19 @@ const Profile = () => {
                       <Typography variant="h5">Organizacje</Typography>
                     </center>
                   </ListItem>
-                  {repositoriesList.map((repository) => {
-                    return (
-                      <ListItem>
-                        <ListItemText>{repository.name}</ListItemText>
-                      </ListItem>
-                    );
-                  })}
+                  {repositoriesList.length === 0 ? (
+                    <ListItem>
+                      <ListItemText>Brak organizacji!</ListItemText>
+                    </ListItem>
+                  ) : (
+                    repositoriesList.map((repository) => {
+                      return (
+                        <ListItem>
+                          <ListItemText>{repository.name}</ListItemText>
+                        </ListItem>
+                      );
+                    })
+                  )}
                 </List>
               </Box>
             </Box>
@@ -229,6 +245,22 @@ const Profile = () => {
             severity="error"
           >
             Nie udało się zmienić danych!
+          </Alert>
+        ) : alert === 3 ? (
+          <Alert
+            action={
+              <IconButton
+                aria-label="close"
+                color="error"
+                size="small"
+                onClick={() => setAlert(0)}
+              >
+                <CloseIcon fontSize="inherit" />
+              </IconButton>
+            }
+            severity="error"
+          >
+            Wszystkie pola powinny być wypełnione!
           </Alert>
         ) : (
           <></>

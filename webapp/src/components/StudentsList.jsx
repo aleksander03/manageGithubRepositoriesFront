@@ -237,10 +237,10 @@ const StudentsList = () => {
       >
         {dialog === 1 ? (
           <>
-            <DialogTitle color="error">Usuwanie prowadzącego</DialogTitle>
+            <DialogTitle color="error">Usuwanie studenta</DialogTitle>
             <DialogContent>
               <DialogContentText color="error">
-                Czy na pewno chcesz usunąć użytkownika o loginie{" "}
+                Czy na pewno chcesz usunąć studenta o loginie{" "}
                 {chosenStudent.githubLogin}?
               </DialogContentText>
             </DialogContent>

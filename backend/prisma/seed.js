@@ -38,6 +38,7 @@ async function main() {
         name: `Profesor${i}`,
         surname: `Nowak${i}`,
         githubLogin: `profesor${i}@git.com`,
+        studentEmail: `profesor${i}@polsl`,
         usersToRoles: {
           create: {
             role: {

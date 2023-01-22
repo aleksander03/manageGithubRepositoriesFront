@@ -16,7 +16,6 @@ app.get("/api/login", async (req, res) => {
     const clientId = process.env.REACT_APP_CLIENT_ID;
     const clientSecretId = process.env.REACT_APP_CLIENT_SECRET;
     const clientCode = req.query.code;
-    console.log(clientCode);
 
     await request.post(
       {
@@ -49,13 +48,16 @@ app.post("/api/getUser", async (req, res) => {
       } else {
         name = ["Undefined", "Undefined"];
       }
+      //sprawdzanie czy uuid się nie powtarza
+      for (let i = 0; i < 10; i++) {
+        user = await client.createNewUserFromGit(
+          response.data.login,
+          name[0],
+          name[1]
+        );
 
-      user = await client.createNewUserFromGit(
-        response.data.login,
-        name[0],
-        name[1]
-      );
-      console.log(user);
+        if (user) break;
+      }
     }
 
     res.send(user);
@@ -302,13 +304,18 @@ app.put("/api/addStudentFromLink", async (req, res) => {
           studentEmail
         );
       } else {
-        user = await client.addStudentFromLink(
-          name,
-          surname,
-          githubLogin,
-          studentEmail,
-          urlCode
-        );
+        //sprawdzanie czy id nie jest zajęte
+        for (let i = 0; i < 10; i++) {
+          user = await client.addStudentFromLink(
+            name,
+            surname,
+            githubLogin,
+            studentEmail,
+            urlCode
+          );
+
+          if (user) break;
+        }
       }
 
       if (user) res.sendStatus(200);
@@ -317,7 +324,7 @@ app.put("/api/addStudentFromLink", async (req, res) => {
       res.sendStatus(404);
     }
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 });
 
@@ -348,7 +355,7 @@ app.post("/api/addStudentsToSection", async (req, res) => {
       try {
         let repo;
 
-        if (template_name !== "") {
+        if (template_name === "") {
           const { data: repoTmp } = await octokit.repos.createInOrg({
             org: orgName,
             name: student.id + "-" + sectionName + "-repo",
@@ -410,10 +417,13 @@ app.post("/api/addStudentsFromCSV", (req, res) => {
   const template_name = req.body.templateName;
   const octokit = new Octokit({ auth: token });
 
+  const tab = [];
+
   studentsList.map(async (student) => {
     if (student.name !== "") {
       try {
         let user;
+
         await octokit.users.getByUsername({ username: student.githubLogin });
 
         const isStudentExist = await client.checkIsUserExist(
@@ -422,18 +432,21 @@ app.post("/api/addStudentsFromCSV", (req, res) => {
         );
 
         if (!isStudentExist) {
-          user = await client.addStudentFromCSV(student, sectionId);
-          console.log("Jeżeli nie istnieje", user);
+          //sprawdzanie czy id nie jest zajęte
+          for (let i = 0; i < 10; i++) {
+            user = await client.addStudentFromCSV(student, sectionId);
+
+            if (user) break;
+          }
         } else {
           user = await client.addStudentToSectionFromCSV(student, sectionId);
-          console.log("Jeżeli istnieje", user);
           if (!user) throw "User exist in section!";
         }
 
         if (user.id) {
           let repo;
 
-          if (template_name !== "") {
+          if (template_name === "") {
             const { data: repoTmp } = await octokit.repos.createInOrg({
               org: orgName,
               name: user.id + "-" + sectionName + "-repo",
@@ -445,7 +458,7 @@ app.post("/api/addStudentsFromCSV", (req, res) => {
           } else {
             const { data: repoTmp } = await octokit.repos.createUsingTemplate({
               template_owner: orgName,
-              template_repo: "template",
+              template_repo: template_name,
               name: user.id + "-" + sectionName + "-repo",
               private: true,
               owner: orgName,
@@ -473,12 +486,12 @@ app.post("/api/addStudentsFromCSV", (req, res) => {
             org: orgName,
             username: user.githubLogin,
           });
-
-          console.log("finish");
         }
       } catch (e) {
-        if (e.status !== 422 && e !== "User exist in section!")
+        if (e.status !== 422 && e !== "User exist in section!") {
           await client.deleteUserToSectionRelation(student.githubLogin);
+          tab.push(student);
+        }
         console.error(e);
       }
     }
