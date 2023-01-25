@@ -39,6 +39,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import PersonIcon from "@mui/icons-material/Person";
 import SchoolIcon from "@mui/icons-material/School";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
+import CircularProgress from "@mui/material/CircularProgress";
+import { isAdmin } from "./CheckIsAdmin";
 
 const SingleSection = () => {
   const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
@@ -47,14 +49,13 @@ const SingleSection = () => {
   const editedSectionId = urlParams.id;
   const siteName = (
     <Box sx={{ display: "flex", alignItems: "center" }}>
-      <PeopleAltIcon fontSize="large" sx={{ pr: 1 }} />
+      <PeopleAltIcon color="success" fontSize="large" sx={{ pr: 1 }} />
       <Typography variant="h5">Edycja sekcji</Typography>
     </Box>
   );
   const [section, setSection] = useState({});
   const [professors, setProfessors] = useState([]);
   const [students, setStudents] = useState([]);
-  const [sectionName, setSectionName] = useState("");
   const [dialog, setDialog] = useState(0);
   const [addStudentsLink, setAddStudentsLink] = useState("");
   const [studentsInQueue, setStudentsInQueue] = useState([]);
@@ -69,6 +70,9 @@ const SingleSection = () => {
   const [alert, setAlert] = useState(0);
   const [templateRepositoryName, setTemplateRepositoryName] = useState("");
   const [useTemplate, setUseTemplate] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [rejectedStudents, setRejectedStudents] = useState([]);
+  const [admin, setAdmin] = useState(false);
   const navigate = useNavigate();
 
   const getSection = async () => {
@@ -92,6 +96,7 @@ const SingleSection = () => {
           name: body[0][0].name,
           organizationId: body[0][0].organization.id,
           organization: body[0][0].organization.name,
+          organizationGitHub: body[0][0].organization.githubName,
         });
         const professorsList = [];
         const studentsList = [];
@@ -129,7 +134,6 @@ const SingleSection = () => {
         console.log(studentsList);
         setProfessors(professorsList);
         setStudents(studentsList);
-        setSectionName(body[0][0].name);
       });
     }
   };
@@ -251,7 +255,7 @@ const SingleSection = () => {
         sectionId: section.id,
         token: localStorage.getItem("accessToken"),
         sectionName: section.name,
-        orgName: section.organization,
+        orgName: section.organizationGitHub,
         templateName: templateRepositoryName,
       }),
     });
@@ -262,16 +266,38 @@ const SingleSection = () => {
     }
   };
 
+  const deleteStudentFromQueue = async () => {
+    const response = await fetch(`${serverSite}/api/deleteStudentFromQueue`, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: deleteStudentFromLink.id,
+        urlCode: deleteStudentFromLink.urlCodesToUsers[0].urlCode.id,
+      }),
+    });
+
+    if (response.status === 200)
+      setStudentsInQueue((oldList) =>
+        oldList.filter((student) => student.id !== deleteStudentFromLink.id)
+      );
+
+    setDialog(7);
+  };
+
   const addStudentsFromCSV = async () => {
     const requestBody = {
       users: studentsFromCSV,
       sectionId: section.id,
       sectionName: section.name,
-      orgName: section.organization,
+      orgName: section.organizationGitHub,
       token: localStorage.getItem("accessToken"),
       templateName: templateRepositoryName,
     };
-
+    setDialog(0);
+    setLoading(true);
     const response = await fetch(`${serverSite}/api/addStudentsFromCSV`, {
       method: "POST",
       headers: {
@@ -281,9 +307,15 @@ const SingleSection = () => {
       body: JSON.stringify(requestBody),
     });
 
-    if (response.status === 200) getSection();
-
-    setDialog(0);
+    if (response.status === 200) {
+      getSection();
+      const body = await response.json();
+      if (body.length) {
+        setRejectedStudents(body);
+        setDialog(9);
+      } else setAlert(3);
+    }
+    setLoading(false);
   };
 
   const selectItem = (list, githubLogin, setList) => {
@@ -363,6 +395,7 @@ const SingleSection = () => {
     const selectedProfessors = availableProfessors
       .filter((professor) => professor.isSelected)
       .map((professor) => professor.id);
+
     const newProfessors = availableProfessors.filter(
       (professor) => professor.isSelected
     );
@@ -376,7 +409,7 @@ const SingleSection = () => {
         },
         body: JSON.stringify({
           sectionId: section.id,
-          userId: selectedProfessors,
+          professorsIds: selectedProfessors,
         }),
       });
 
@@ -455,20 +488,30 @@ const SingleSection = () => {
   };
 
   const deleteSection = async () => {
-    const response = await fetch(
-      `${serverSite}/api/deleteSection?sectionId=${
-        section.id
-      }&userId=${localStorage.getItem("userId")}`,
-      {
-        method: "DELETE",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      }
+    const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("accessToken");
+    const usersRepositories = students.map(
+      (student) => student.id + "-" + section.name + "-repo"
     );
+
+    const response = await fetch(`${serverSite}/api/deleteSection`, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        sectionId: section.id,
+        sectionName: section.name,
+        userId: userId,
+        repositories: usersRepositories,
+        accessToken: token,
+        org: section.organizationGitHub,
+      }),
+    });
     if (response.status === 200)
       navigate(`/organization/${section.organizationId}`);
+    else alert("Coś tam, coś tam");
   };
 
   const sendIssue = async () => {
@@ -489,7 +532,7 @@ const SingleSection = () => {
         },
         body: JSON.stringify({
           token: localStorage.getItem("accessToken"),
-          owner: section.organization,
+          owner: section.organizationGitHub,
           repoName: repositories,
           issueTitle: issueTitle,
           issueText: issueText,
@@ -512,6 +555,11 @@ const SingleSection = () => {
       <>
         <DialogTitle>Dodawanie prowadzących do sekcji</DialogTitle>
         <DialogContent>
+          <DialogContentText color="error">
+            Uwaga! Jeżeli użytkownik nie znajduje się w organizacji, powinien
+            zostać ręcznie zaproszony do organizacji z poziomu platformy GitHub!
+            Powinien być dodany jako owner!
+          </DialogContentText>
           <TextField
             margin="dense"
             label="Filtr"
@@ -759,7 +807,38 @@ const SingleSection = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialog(7)}>Anuluj</Button>
-          <Button>Tak</Button>
+          <Button onClick={deleteStudentFromQueue}>Tak</Button>
+        </DialogActions>
+      </>
+    ) : dialog === 9 ? (
+      <>
+        <DialogTitle>Lista osób, których nie udało się dodać</DialogTitle>
+        <DialogContent>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Imię</TableCell>
+                <TableCell>Nazwisko</TableCell>
+                <TableCell>Login GitHub</TableCell>
+                <TableCell>Email uczelniany</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {rejectedStudents.map((student) => {
+                return (
+                  <TableRow key={student.githubLogin}>
+                    <TableCell>{student.name}</TableCell>
+                    <TableCell>{student.surname}</TableCell>
+                    <TableCell>{student.githubLogin}</TableCell>
+                    <TableCell>{student.studentEmail}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialog(0)}>Zrozumiałem</Button>
         </DialogActions>
       </>
     ) : (
@@ -783,27 +862,47 @@ const SingleSection = () => {
       >
         Brak tytułu issue!
       </Alert>
+    ) : alert === 2 ? (
+      <Alert
+        action={
+          <IconButton
+            aria-label="close"
+            color="error"
+            size="small"
+            onClick={() => setAlert(0)}
+          >
+            <CloseIcon fontSize="inherit" />
+          </IconButton>
+        }
+        severity="error"
+      >
+        Nie udało się wysłać issue!
+      </Alert>
     ) : (
-      alert === 2 && (
-        <Alert
-          action={
-            <IconButton
-              aria-label="close"
-              color="error"
-              size="small"
-              onClick={() => setAlert(0)}
-            >
-              <CloseIcon fontSize="inherit" />
-            </IconButton>
-          }
-          severity="error"
-        >
-          Nie udało się wysłać issue!
-        </Alert>
-      )
+      <Alert
+        action={
+          <IconButton
+            aria-label="close"
+            color="error"
+            size="small"
+            onClick={() => setAlert(0)}
+          >
+            <CloseIcon fontSize="inherit" />
+          </IconButton>
+        }
+        severity="success"
+      >
+        Udało się dodać wszystkich studentów z listy!
+      </Alert>
     );
 
+  const checkIsAdmin = async () => {
+    const adminTmp = await isAdmin(localStorage.getItem("userId"));
+    setAdmin(adminTmp);
+  };
+
   useEffect(() => {
+    checkIsAdmin();
     getSection();
   }, []);
 
@@ -815,24 +914,25 @@ const SingleSection = () => {
       <Divider />
       <Box className={classesLayout.contentContainer}>
         <Box className={classesLayout.leftBar}>
-          <LeftBar />
+          <LeftBar chosenItem={"organizations"} />
         </Box>
         <Box className={classesLayout.content}>
           <Box className={classes.topContainer}>
             <Box className={classes.topRightContainer}>
-              <Box className={classes.topRightButton}>
-                <Button variant="contained" size="large">
-                  ARCHIWIZUJ
+              {admin ? (
+                <Button
+                  variant="contained"
+                  size="large"
+                  color="error"
+                  onClick={() => setDialog(3)}
+                >
+                  USUŃ
                 </Button>
-              </Box>
-              <Button
-                variant="contained"
-                size="large"
-                color="error"
-                onClick={() => setDialog(3)}
-              >
-                USUŃ
-              </Button>
+              ) : (
+                <Button variant="contained" size="large" color="error" disabled>
+                  USUŃ
+                </Button>
+              )}
             </Box>
           </Box>
           <Box className={classes.contentContainer}>
@@ -944,26 +1044,42 @@ const SingleSection = () => {
               >
                 {professorsList}
               </List>
-              <Box className={classes.addButton}>
-                <Button
-                  variant="contained"
-                  size="large"
-                  onClick={() => {
-                    getAvailableProfessors();
-                    setDialog(1);
-                  }}
-                >
-                  Dodaj
-                </Button>
-                <Button
-                  variant="contained"
-                  size="large"
-                  color="error"
-                  onClick={handleOpenDeleteDialog}
-                >
-                  USUŃ
-                </Button>
-              </Box>
+              {admin ? (
+                <Box className={classes.addButton}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    onClick={() => {
+                      getAvailableProfessors();
+                      setDialog(1);
+                    }}
+                  >
+                    Dodaj
+                  </Button>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    color="error"
+                    onClick={handleOpenDeleteDialog}
+                  >
+                    USUŃ
+                  </Button>
+                </Box>
+              ) : (
+                <Box className={classes.addButton}>
+                  <Button variant="contained" size="large" disabled>
+                    Dodaj
+                  </Button>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    color="error"
+                    disabled
+                  >
+                    USUŃ
+                  </Button>
+                </Box>
+              )}
             </Box>
             <Box className={classes.content}>
               <List
@@ -1031,6 +1147,18 @@ const SingleSection = () => {
         {dialogScreen}
         <Collapse in={alert}>{alertScreen}</Collapse>
       </Dialog>
+      <Collapse in={loading}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+          }}
+        >
+          <CircularProgress color="warning" />
+        </Box>
+      </Collapse>
     </Box>
   );
 };

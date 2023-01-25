@@ -1,18 +1,26 @@
 import {
+  Alert,
   Box,
   Button,
   Checkbox,
+  Collapse,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
   Divider,
+  IconButton,
   List,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
   TextField,
   Typography,
 } from "@mui/material";
@@ -27,6 +35,9 @@ import FindInPageIcon from "@mui/icons-material/FindInPage";
 import { useEffect } from "react";
 import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import SchoolIcon from "@mui/icons-material/School";
+import CircularProgress from "@mui/material/CircularProgress";
+import CloseIcon from "@mui/icons-material/Close";
+import { isAdmin } from "./CheckIsAdmin";
 
 const SingleOrganization = () => {
   const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
@@ -34,7 +45,7 @@ const SingleOrganization = () => {
   const editedOrgId = urlParams.id;
   const siteName = (
     <Box sx={{ display: "flex", alignItems: "center" }}>
-      <GroupWorkIcon fontSize="large" sx={{ pr: 1 }} />
+      <GroupWorkIcon color="warning" fontSize="large" sx={{ pr: 1 }} />
       <Typography variant="h5">Edycja organizacji</Typography>
     </Box>
   );
@@ -46,14 +57,16 @@ const SingleOrganization = () => {
   const [filterProfessors, setFilterProfessors] = useState("");
   const [availableProfessors, setAvailableProfessors] = useState([]);
   const [newSectionName, setNewSectionName] = useState("");
+  const [notArchivedStudents, setNotArchivedStudents] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState(0);
   const [dialog, setDialog] = useState(0);
+  const [admin, setAdmin] = useState(false);
   const navigate = useNavigate();
 
   const professorsList =
     professors.length > 0 &&
     professors.map((professor) => {
-      console.log(professor);
       return (
         <ListItem key={professor.githubLogin}>
           <ListItemButton
@@ -166,8 +179,7 @@ const SingleOrganization = () => {
         setOrgName(org.name);
       });
     } else {
-      //zrób jakiś alert
-      console.log(response.status);
+      setAlert(2);
     }
   };
 
@@ -179,8 +191,10 @@ const SingleOrganization = () => {
       professors.forEach(
         (professor) => professor.isSelected === true && selectedProfessors++
       );
-      if (selectedProfessors === 0) return;
-    } else if (id === 3) {
+      if (selectedProfessors === 0) {
+        setAlert(3);
+        return;
+      }
     }
     setDialog(id);
   };
@@ -188,7 +202,6 @@ const SingleOrganization = () => {
   const handleCloseDialog = () => {
     if (dialog === 1) {
       setFilterProfessors("");
-    } else if (dialog === 2) {
     } else if (dialog === 3) {
       setNewSectionName("");
     }
@@ -207,7 +220,8 @@ const SingleOrganization = () => {
         },
       }
     );
-    if (response.status === 200)
+
+    if (response.status === 200) {
       response.json().then((body) => {
         const newAvailableProfessors =
           body.length > 0
@@ -217,6 +231,7 @@ const SingleOrganization = () => {
             : [];
         setAvailableProfessors(newAvailableProfessors);
       });
+    } else setAlert(2);
   };
 
   const setSelectedAvailableProfessors = (id) => {
@@ -233,6 +248,7 @@ const SingleOrganization = () => {
     setDialog(0);
     const selectedProfessors = [];
     const newProfessorsTmp = [];
+
     availableProfessors.forEach((professor) => {
       if (professor.isSelected) {
         selectedProfessors.push(professor.id);
@@ -241,7 +257,7 @@ const SingleOrganization = () => {
     });
 
     if (selectedProfessors) {
-      const response = fetch(`${serverSite}/api/addProfessorsToOrganization`, {
+      fetch(`${serverSite}/api/addProfessorsToOrganization`, {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -249,15 +265,16 @@ const SingleOrganization = () => {
         },
         body: JSON.stringify({
           orgId: editedOrgId,
-          userId: selectedProfessors,
+          professorsIds: selectedProfessors,
         }),
       });
-      if (professors.length > 0)
+
+      if (professors.length > 0) {
         setProfessors((oldProfessors) => [
           ...oldProfessors,
           ...newProfessorsTmp,
         ]);
-      else setProfessors(newProfessorsTmp);
+      } else setProfessors(newProfessorsTmp);
     }
   };
 
@@ -295,6 +312,7 @@ const SingleOrganization = () => {
   const deleteSelectedProfessors = () => {
     const deletedProfessors = [];
     const newProfessorsList = [];
+
     professors.forEach((professor) => {
       if (professor.isSelected) {
         deletedProfessors.push(professor.id);
@@ -302,19 +320,20 @@ const SingleOrganization = () => {
         newProfessorsList.push(professor);
       }
     });
-    deletedProfessors.length > 0
-      ? fetch(`${serverSite}/api/deleteProfessorsFromOrganization`, {
-          method: "DELETE",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            orgId: editedOrgId,
-            userId: deletedProfessors,
-          }),
-        })
-      : alert("Musisz zaznaczyć cokolwiek!");
+
+    deletedProfessors.length > 0 &&
+      fetch(`${serverSite}/api/deleteProfessorsFromOrganization`, {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orgId: editedOrgId,
+          userId: deletedProfessors,
+        }),
+      });
+
     setDialog(0);
     setIsAllProfessors(false);
     setProfessors(newProfessorsList);
@@ -322,7 +341,7 @@ const SingleOrganization = () => {
 
   const addSection = async () => {
     handleCloseDialog();
-    const response = await fetch(
+    await fetch(
       `${serverSite}/api/addSectionToOrg?orgId=${editedOrgId}&userId=${localStorage.getItem(
         "userId"
       )}&name=${newSectionName}`,
@@ -334,6 +353,7 @@ const SingleOrganization = () => {
         },
       }
     );
+
     getOrganization();
   };
 
@@ -368,11 +388,40 @@ const SingleOrganization = () => {
     if (response.status === 200) getOrganization();
   };
 
-  // const archiveOrganization = () => {
+  const archiveOrganization = async () => {
+    setLoading(true);
+    const response = await fetch(
+      `${serverSite}/github/archive?orgId=${organization.id}&orgName=${orgName}`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orgId: organization.id,
+          orgName: orgName,
+        }),
+      }
+    );
 
-  // }
+    const body = await response.json();
+    setLoading(false);
+    if (body.length > 0) {
+      setNotArchivedStudents(body);
+      setDialog(5);
+    } else {
+      setAlert(1);
+    }
+  };
+
+  const checkIsAdmin = async () => {
+    const adminTmp = await isAdmin(localStorage.getItem("userId"));
+    setAdmin(adminTmp);
+  };
 
   useEffect(() => {
+    checkIsAdmin();
     getOrganization();
   }, []);
 
@@ -383,7 +432,8 @@ const SingleOrganization = () => {
         <DialogContent>
           <DialogContentText color="error">
             Uwaga! Użytkownik dodawany do organizacji, powinien zostać ręcznie
-            zaproszony do organizacji z poziomu platformy GitHub!
+            zaproszony do organizacji z poziomu platformy GitHub! Powinien być
+            dodany jako owner!
           </DialogContentText>
           <TextField
             margin="dense"
@@ -454,6 +504,35 @@ const SingleOrganization = () => {
           <Button onClick={deleteOrganization}>Tak</Button>
         </DialogActions>
       </>
+    ) : dialog === 5 ? (
+      <>
+        <DialogTitle color="error">
+          Nie udało się zarchiwizować tych repozytoriów
+        </DialogTitle>
+        <DialogContent>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Sekcja</TableCell>
+                <TableCell>Imię</TableCell>
+                <TableCell>Nazwisko</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {notArchivedStudents.map((student) => (
+                <TableRow key={student.repository}>
+                  <TableCell>{student.sectionName}</TableCell>
+                  <TableCell>{student.name}</TableCell>
+                  <TableCell>{student.surname}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Zrozumiałem</Button>
+        </DialogActions>
+      </>
     ) : (
       <></>
     );
@@ -466,45 +545,90 @@ const SingleOrganization = () => {
       <Divider />
       <Box className={classesLayout.contentContainer}>
         <Box className={classesLayout.leftBar}>
-          <LeftBar />
+          <LeftBar chosenItem={"organizations"} />
         </Box>
         <Box className={classesLayout.content}>
           <Box className={classes.mainContainer}>
             <Box className={classes.topContainer}>
               <Box>
-                <TextField
-                  label="Nazwa organizacji"
-                  type="search"
-                  variant="filled"
-                  size="small"
-                  InputProps={{ className: classes.topLeftTextFieldInput }}
-                  sx={{ pr: "10px" }}
-                  value={orgName}
-                  onChange={(event) => setOrgName(event.target.value)}
-                  defaultValue=" "
-                />
-                <Button
-                  variant="contained"
-                  size="large"
-                  onClick={changeOrgLocalName}
-                >
-                  ZMIEŃ
-                </Button>
+                {admin ? (
+                  <>
+                    <TextField
+                      label="Nazwa organizacji"
+                      type="search"
+                      variant="filled"
+                      size="small"
+                      InputProps={{ className: classes.topLeftTextFieldInput }}
+                      sx={{ pr: "10px" }}
+                      value={orgName}
+                      onChange={(event) => setOrgName(event.target.value)}
+                      defaultValue=" "
+                    />
+                    <Button
+                      variant="contained"
+                      size="large"
+                      onClick={changeOrgLocalName}
+                    >
+                      ZMIEŃ
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <TextField
+                      label="Nazwa organizacji"
+                      type="search"
+                      variant="filled"
+                      size="small"
+                      InputProps={{ className: classes.topLeftTextFieldInput }}
+                      sx={{ pr: "10px" }}
+                      value={orgName}
+                      disabled
+                      defaultValue=" "
+                    />
+                    <Button variant="contained" size="large" disabled>
+                      ZMIEŃ
+                    </Button>
+                  </>
+                )}
               </Box>
               <Box className={classes.topRightContainer}>
-                <Box className={classes.topRightButton}>
-                  <Button variant="contained" size="large">
-                    ARCHIWIZUJ
-                  </Button>
-                </Box>
-                <Button
-                  variant="contained"
-                  size="large"
-                  color="error"
-                  onClick={() => handleOpenDialog(4)}
-                >
-                  USUŃ
-                </Button>
+                {admin ? (
+                  <>
+                    <Box className={classes.topRightButton}>
+                      <Button
+                        variant="contained"
+                        size="large"
+                        onClick={archiveOrganization}
+                      >
+                        ARCHIWIZUJ
+                      </Button>
+                    </Box>
+                    <Button
+                      variant="contained"
+                      size="large"
+                      color="error"
+                      onClick={() => handleOpenDialog(4)}
+                    >
+                      USUŃ
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Box className={classes.topRightButton}>
+                      <Button variant="contained" size="large" disabled>
+                        ARCHIWIZUJ
+                      </Button>
+                    </Box>
+                    <Button
+                      variant="contained"
+                      size="large"
+                      color="error"
+                      disabled
+                    >
+                      USUŃ
+                    </Button>
+                  </>
+                )}
               </Box>
             </Box>
             <Box className={classes.contentContainer}>
@@ -602,23 +726,39 @@ const SingleOrganization = () => {
                 >
                   {professorsList}
                 </List>
-                <Box className={classes.addButton}>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    onClick={() => handleOpenDialog(1)}
-                  >
-                    Dodaj
-                  </Button>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    color="error"
-                    onClick={() => handleOpenDialog(2)}
-                  >
-                    USUŃ
-                  </Button>
-                </Box>
+                {admin ? (
+                  <Box className={classes.addButton}>
+                    <Button
+                      variant="contained"
+                      size="large"
+                      onClick={() => handleOpenDialog(1)}
+                    >
+                      Dodaj
+                    </Button>
+                    <Button
+                      variant="contained"
+                      size="large"
+                      color="error"
+                      onClick={() => handleOpenDialog(2)}
+                    >
+                      USUŃ
+                    </Button>
+                  </Box>
+                ) : (
+                  <Box className={classes.addButton}>
+                    <Button variant="contained" size="large" disabled>
+                      Dodaj
+                    </Button>
+                    <Button
+                      variant="contained"
+                      size="large"
+                      color="error"
+                      disabled
+                    >
+                      USUŃ
+                    </Button>
+                  </Box>
+                )}
               </Box>
               <Box className={classes.content}>
                 <List
@@ -645,13 +785,25 @@ const SingleOrganization = () => {
                 >
                   {sectionsList}
                 </List>
-                <Button
-                  variant="contained"
-                  size="large"
-                  onClick={() => handleOpenDialog(3)}
-                >
-                  Dodaj
-                </Button>
+                {admin ? (
+                  <Button
+                    variant="contained"
+                    size="large"
+                    onClick={() => handleOpenDialog(3)}
+                    sx={{ width: "100%" }}
+                  >
+                    Dodaj
+                  </Button>
+                ) : (
+                  <Button
+                    variant="contained"
+                    size="large"
+                    disabled
+                    sx={{ width: "100%" }}
+                  >
+                    Dodaj
+                  </Button>
+                )}
               </Box>
             </Box>
           </Box>
@@ -664,6 +816,75 @@ const SingleOrganization = () => {
       >
         {dialogScreen}
       </Dialog>
+      <Collapse in={loading}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+          }}
+        >
+          <CircularProgress color="warning" />
+        </Box>
+      </Collapse>
+      <Collapse
+        in={alert}
+        sx={{ position: "absolute", width: "100%", bottom: 0 }}
+      >
+        {alert === 1 ? (
+          <Alert
+            action={
+              <IconButton
+                aria-label="close"
+                color="error"
+                size="small"
+                onClick={() => setAlert(0)}
+              >
+                <CloseIcon fontSize="inherit" />
+              </IconButton>
+            }
+            severity="success"
+          >
+            Archiwizacja się powiodła! Możesz bezpiecznie wcisnąć przycisk USUŃ
+            i usunąć dane z GitHub
+          </Alert>
+        ) : alert === 2 ? (
+          <Alert
+            action={
+              <IconButton
+                aria-label="close"
+                color="error"
+                size="small"
+                onClick={() => setAlert(0)}
+              >
+                <CloseIcon fontSize="inherit" />
+              </IconButton>
+            }
+            severity="error"
+          >
+            Nie udało się pobrać danych!
+          </Alert>
+        ) : alert === 3 ? (
+          <Alert
+            action={
+              <IconButton
+                aria-label="close"
+                color="error"
+                size="small"
+                onClick={() => setAlert(0)}
+              >
+                <CloseIcon fontSize="inherit" />
+              </IconButton>
+            }
+            severity="error"
+          >
+            Musisz zaznaczyć przynajmniej 1 prowadzącego!
+          </Alert>
+        ) : (
+          <></>
+        )}
+      </Collapse>
     </Box>
   );
 };

@@ -29,6 +29,8 @@ import classes from "./TeachersList.module.scss";
 import { useEffect } from "react";
 import GroupIcon from "@mui/icons-material/Group";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { isAdmin } from "./CheckIsAdmin";
+import { useNavigate } from "react-router-dom";
 
 const headCells = [
   { id: "name", label: "Imię" },
@@ -44,7 +46,7 @@ const TeachersList = () => {
   const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
   const siteName = (
     <Box sx={{ display: "flex", alignItems: "center" }}>
-      <GroupIcon fontSize="large" sx={{ pr: 1 }} />
+      <GroupIcon color="primary" fontSize="large" sx={{ pr: 1 }} />
       <Typography variant="h5">Lista prowadzących</Typography>
     </Box>
   );
@@ -57,6 +59,8 @@ const TeachersList = () => {
   const [rowsPerPage, setRowPerPage] = useState(10);
   const [dialog, setDialog] = useState(false);
   const [chosenTeacher, setChosenTeacher] = useState({});
+  const [admin, setAdmin] = useState(true);
+  const navigate = useNavigate();
 
   const getTeachers = async (orderBy, order, filter, page, rows) => {
     await fetch(
@@ -149,10 +153,7 @@ const TeachersList = () => {
 
   const tableRow = (row) => {
     return (
-      <TableRow
-        onClick={() => console.log("Szybkie sprawdzenie użytkownika")}
-        hover
-      >
+      <TableRow hover>
         <TableCell>{row.name}</TableCell>
         <TableCell>{row.surname}</TableCell>
         <TableCell>{row.githubLogin}</TableCell>
@@ -214,65 +215,75 @@ const TeachersList = () => {
   };
 
   const handleChangeRole = async (role, userId, checked) => {
-    const roleName =
-      role === "admin"
-        ? "Administrator"
-        : role === "teacher"
-        ? "Profesor"
-        : "unknown";
+    if (!(userId === localStorage.getItem("userId") && role === "admin")) {
+      const roleName =
+        role === "admin"
+          ? "Administrator"
+          : role === "teacher"
+          ? "Profesor"
+          : "unknown";
 
-    if (roleName !== "unknown") {
-      if (checked) {
-        const response = await fetch(
-          `${serverSite}/api/giveRole?role=${roleName}&userId=${userId}`,
-          {
-            method: "PUT",
-            headers: {
-              Accept: "application/json",
-              "Content-Type": "application/json",
-            },
+      if (roleName !== "unknown") {
+        if (checked) {
+          const response = await fetch(
+            `${serverSite}/api/giveRole?role=${roleName}&userId=${userId}`,
+            {
+              method: "PUT",
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (response.status === 201) {
+            const newTeachersList = [];
+            data.forEach((teacher) => {
+              if (teacher.id === userId)
+                newTeachersList.push({ ...teacher, [role]: checked });
+              else newTeachersList.push(teacher);
+            });
+
+            setData(newTeachersList);
           }
-        );
+        } else {
+          const response = await fetch(
+            `${serverSite}/api/deleteRole?role=${roleName}&userId=${userId}`,
+            {
+              method: "DELETE",
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+              },
+            }
+          );
 
-        if (response.status === 201) {
-          const newTeachersList = [];
-          data.forEach((teacher) => {
-            if (teacher.id === userId)
-              newTeachersList.push({ ...teacher, [role]: checked });
-            else newTeachersList.push(teacher);
-          });
+          if (response.status === 200) {
+            const newTeachersList = [];
+            data.forEach((teacher) => {
+              if (teacher.id === userId)
+                newTeachersList.push({ ...teacher, [role]: checked });
+              else newTeachersList.push(teacher);
+            });
 
-          setData(newTeachersList);
-        }
-      } else {
-        const response = await fetch(
-          `${serverSite}/api/deleteRole?role=${roleName}&userId=${userId}`,
-          {
-            method: "DELETE",
-            headers: {
-              Accept: "application/json",
-              "Content-Type": "application/json",
-            },
+            setData(newTeachersList);
           }
-        );
-
-        if (response.status === 200) {
-          const newTeachersList = [];
-          data.forEach((teacher) => {
-            if (teacher.id === userId)
-              newTeachersList.push({ ...teacher, [role]: checked });
-            else newTeachersList.push(teacher);
-          });
-
-          setData(newTeachersList);
         }
       }
     }
   };
 
+  const checkIsAdmin = async () => {
+    const adminTmp = await isAdmin(localStorage.getItem("userId"));
+    setAdmin(adminTmp);
+  };
+
   useEffect(() => {
+    checkIsAdmin();
     getTeachers(orderBy, order, filter, page, rowsPerPage);
   }, []);
+
+  if (!admin) navigate("/");
 
   return (
     <Box className={classesLayout.mainContainer}>
@@ -282,7 +293,7 @@ const TeachersList = () => {
       <Divider />
       <Box className={classesLayout.contentContainer}>
         <Box className={classesLayout.leftBar}>
-          <LeftBar />
+          <LeftBar chosenItem={"teachersList"} />
         </Box>
         <Box className={classesLayout.content}>
           <Box className={classes.textFieldContainer}>

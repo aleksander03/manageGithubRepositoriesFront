@@ -4,12 +4,25 @@ import cors from "cors";
 import request from "request";
 import { Octokit } from "@octokit/rest";
 import * as client from "./dbOps";
+import simpleGit from "simple-git";
+import fs from "fs-extra";
+import archiver from "archiver";
 
 const app = express();
 const port = 5000;
 
 app.use(bodyParser.json());
 app.use(cors());
+
+app.get("/api/isAdmin", async (req, res) => {
+  const userId = req.query.userId;
+
+  const isAdmin = await client.isAdmin(userId)
+  console.log(isAdmin)
+
+  if(isAdmin) res.sendStatus(200);
+  else res.sendStatus(418);
+})
 
 app.get("/api/login", async (req, res) => {
   try {
@@ -195,14 +208,16 @@ app.get("/api/getAvailableProfessors", async (req, res) => {
 app.post("/api/addProfessorsToOrganization", async (req, res) => {
   try {
     const orgId = parseInt(req.body.orgId);
-    const professorId = req.body.userId;
+    const professorsIds = req.body.professorsIds;
 
     const addRelation = await client.addProfessorsToOrganization(
       orgId,
-      professorId
+      professorsIds
     );
+
     if (addRelation) res.sendStatus(201);
     else res.sendStatus(503);
+
   } catch (error) {
     res.send(error);
   }
@@ -341,6 +356,19 @@ app.get("/api/getStudentsInQueue", async (req, res) => {
   }
 });
 
+app.delete("/api/deleteStudentFromQueue", async (req, res) => {
+  try {
+    const userId = req.body.userId;
+    const urlCode = req.body.urlCode;
+
+    await client.deleteStudentFromQueue(userId, urlCode);
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
 app.post("/api/addStudentsToSection", async (req, res) => {
   try {
     const users = req.body.users;
@@ -408,7 +436,7 @@ app.post("/api/addStudentsToSection", async (req, res) => {
   }
 });
 
-app.post("/api/addStudentsFromCSV", (req, res) => {
+app.post("/api/addStudentsFromCSV", async (req, res) => {
   const studentsList = req.body.users;
   const sectionId = parseInt(req.body.sectionId);
   const token = req.body.token;
@@ -417,9 +445,9 @@ app.post("/api/addStudentsFromCSV", (req, res) => {
   const template_name = req.body.templateName;
   const octokit = new Octokit({ auth: token });
 
-  const tab = [];
+  const notAcceptedUsers = [];
 
-  studentsList.map(async (student) => {
+  const promises = studentsList.map(async (student) => {
     if (student.name !== "") {
       try {
         let user;
@@ -490,13 +518,15 @@ app.post("/api/addStudentsFromCSV", (req, res) => {
       } catch (e) {
         if (e.status !== 422 && e !== "User exist in section!") {
           await client.deleteUserToSectionRelation(student.githubLogin);
-          tab.push(student);
+          notAcceptedUsers.push(student);
         }
         console.error(e);
       }
     }
   });
-  res.send();
+
+  if (promises) await Promise.all(promises);
+  res.send(notAcceptedUsers);
 });
 
 app.get("/api/getAvailableProfessorsForSection", async (req, res) => {
@@ -518,14 +548,16 @@ app.get("/api/getAvailableProfessorsForSection", async (req, res) => {
 app.post("/api/addProfessorsToSection", async (req, res) => {
   try {
     const sectionId = parseInt(req.body.sectionId);
-    const professorId = req.body.userId;
+    const professorsIds = req.body.professorsIds;
 
     const addRelation = await client.addProfessorsToSection(
       sectionId,
-      professorId
+      professorsIds
     );
+
     if (addRelation) res.sendStatus(201);
     else res.sendStatus(503);
+
   } catch (error) {
     res.send(error);
   }
@@ -536,7 +568,7 @@ app.delete("/api/deleteProfessorsFromSection", async (req, res) => {
     const sectionId = parseInt(req.body.sectionId);
     const professorId = req.body.userId;
 
-    const deleteRelation = await client.deleteProfessorsFromSection(
+    const deleteRelation = await client.deleteUsersFromSection(
       sectionId,
       professorId
     );
@@ -549,17 +581,98 @@ app.delete("/api/deleteProfessorsFromSection", async (req, res) => {
 
 app.delete("/api/deleteSection", async (req, res) => {
   try {
-    const sectionId = parseInt(req.query.sectionId);
-    const userId = req.query.userId;
+    const sectionId = parseInt(req.body.sectionId);
+    const sectionName = req.body.sectionName;
+    const userId = req.body.userId;
+    const repositories = req.body.repositories;
+    const token = req.body.accessToken;
+    const org = req.body.org;
+    const octokit = new Octokit({ auth: token });
+
+    const notDeletedRepositories = [];
+
+    const promises = repositories.map(async (repository) => {
+      try {
+        await octokit.repos.delete({ owner: org, repo: repository });
+        await octokit.teams.deleteInOrg({
+          org: org,
+          team_slug: userId + "-" + sectionName,
+        });
+      } catch (error) {
+        notDeletedRepositories.push(repository);
+        console.error(error);
+      }
+    });
 
     const isAdmin = await client.isAdmin(userId);
     if (isAdmin) {
+      if (promises) await Promise.all(promises);
+
+      if (!notDeletedRepositories) {
+        res.status(401);
+        res.send(notDeletedRepositories);
+      }
+
       const section = await client.deleteSection(sectionId);
       if (section) res.sendStatus(200);
       else res.sendStatus(418);
     } else res.sendStatus(401);
   } catch (error) {
     console.error(error);
+  }
+});
+
+app.post("/github/archive", async (req, res) => {
+  try {
+    const orgId = parseInt(req.body.orgId);
+    const orgName = req.body.orgName;
+
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
+    const day = currentDate.getDate();
+    const hour = currentDate.getHours();
+    const minute = currentDate.getMinutes();
+    const formatedDate = `${year}-${month}-${day}-${hour}-${minute}`;
+
+    const git = simpleGit();
+
+    const sections = await client.getOrgForArchive(orgId);
+    const notDeletedRepositories = [];
+
+    const promises = sections.map(async (repository) => {
+      try {
+        const folderName = `${orgName}_${formatedDate}/${
+          repository.sectionName
+        }/${repository.name + "_" + repository.surname}`;
+
+        await git.clone(repository.repository, `./Archiwum/${folderName}`);
+        const output = fs.createWriteStream(`./Archiwum/${folderName}.zip`);
+        const archive = archiver("zip", { zlib: { level: 9 } });
+        output.on("close", async () => {
+          await fs.rm(
+            `./Archiwum/${folderName}`,
+            { recursive: true },
+            (err) => {
+              if (err) console.error(err);
+            }
+          );
+        });
+        archive.pipe(output);
+        archive.directory(`./Archiwum/${folderName}`, "");
+        archive.finalize();
+      } catch (err) {
+        notDeletedRepositories.push(repository);
+      }
+    });
+
+    await Promise.all(promises);
+    res.send(notDeletedRepositories);
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .send({ message: "Wystąpił błąd podczas tworzenia archiwum" });
   }
 });
 
@@ -574,12 +687,16 @@ app.post("/github/createIssue", (req, res) => {
     const octokit = new Octokit({ auth: token });
 
     repoName.forEach(async (repo) => {
-      const result = await octokit.issues.create({
-        owner: owner,
-        repo: repo,
-        title: issueTitle,
-        body: issueText,
-      });
+      try {
+        const result = await octokit.issues.create({
+          owner: owner,
+          repo: repo,
+          title: issueTitle,
+          body: issueText,
+        });
+      } catch (err) {
+        console.error(err);
+      }
     });
 
     res.sendStatus(200);
@@ -710,6 +827,43 @@ app.put("/api/changeOrgLocalName", async (req, res) => {
     await client.changeOrgLocalName(orgId, newOrgName);
 
     res.sendStatus(200);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.get("/api/getArchive", (req, res) => {
+  try {
+    const directory = req.query.directory;
+
+    fs.readdir(`./${directory}`, (err, files) => {
+      if (err) res.sendStatus(418);
+      else res.send(files);
+    });
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.delete("/api/deleteArchive", (req, res) => {
+  try {
+    const filePath = req.query.filePath;
+
+    fs.remove(`./${filePath}`)
+      .then(() => res.sendStatus(200))
+      .catch((err) => res.sendStatus(418));
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.get("/api/downloadFile", (req, res) => {
+  try {
+    const directory = req.query.directory;
+    const fileName = req.query.fileName;
+    console.log(`.${directory}/${fileName}`);
+
+    res.download(`.${directory}/${fileName}`);
   } catch (error) {
     console.error(error);
   }

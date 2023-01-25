@@ -6,35 +6,52 @@ import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import ArchiveIcon from "@mui/icons-material/Archive";
 import classes from "./Layout.module.scss";
 import { useNavigate } from "react-router-dom";
-import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
 
-export const leftBarItems = [
-  { id: "organizations", name: "Organizacje" },
-  { id: "teachersList", name: "Lista prowadzących" },
-  { id: "studentsList", name: "Lista studentów" },
-  { id: "repositoriesList", name: "Lista repozytoriów" },
-  { id: "archive", name: "Archiwum" },
-];
-
-const iconButton = (icon) => {
+const iconButton = (icon, isActive) => {
   switch (icon) {
     case "organizations":
-      return <GroupWorkIcon />;
+      return isActive ? <GroupWorkIcon color="warning" /> : <GroupWorkIcon />;
     case "teachersList":
-      return <GroupIcon />;
+      return isActive ? <GroupIcon color="primary" /> : <GroupIcon />;
     case "studentsList":
-      return <PeopleAltIcon />;
+      return isActive ? <PeopleAltIcon color="secondary" /> : <PeopleAltIcon />;
     case "archive":
-      return <ArchiveIcon />;
-    case "repositoriesList":
-      return <LibraryBooksIcon />;
+      return isActive ? <ArchiveIcon color="action" /> : <ArchiveIcon />;
     default:
       break;
   }
 };
 
-const LeftBar = () => {
+const LeftBar = (props) => {
   const navigate = useNavigate();
+  const chosenItem = props.chosenItem;
+  const leftBarItems = [
+    {
+      id: "organizations",
+      name: "Organizacje",
+      isActive: chosenItem === "organizations" ? true : false,
+      color: "#ed6c02",
+    },
+    {
+      id: "teachersList",
+      name: "Lista prowadzących",
+      isActive: chosenItem === "teachersList" ? true : false,
+      color: "#1976d2",
+    },
+    {
+      id: "studentsList",
+      name: "Lista studentów",
+      isActive: chosenItem === "studentsList" ? true : false,
+      color: "#9c27b0",
+    },
+    {
+      id: "archive",
+      name: "Archiwum",
+      isActive: chosenItem === "archive" ? true : false,
+      color: "#000000",
+    },
+  ];
+
   const leftBarItemsList = leftBarItems.map((row) => {
     return (
       <Box key={row.name}>
@@ -43,10 +60,14 @@ const LeftBar = () => {
           key={row.id}
           className={classes.leftBarButton}
           size="small"
-          style={{ background: "transparent", color: "black" }}
+          style={{
+            background: "transparent",
+            color: row.isActive ? row.color : "black",
+          }}
           onClick={() => navigate(`/${row.id}`)}
+          variant="text"
         >
-          {iconButton(row.id)}{" "}
+          {iconButton(row.id, row.isActive)}{" "}
           <p className={classes.leftBarRowName}>{row.name}</p>
         </Button>
         <br />

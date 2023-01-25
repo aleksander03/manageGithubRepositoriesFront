@@ -7,6 +7,7 @@ import {
   IconButton,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
   TextField,
   Typography,
@@ -19,18 +20,20 @@ import PersonIcon from "@mui/icons-material/Person";
 import { useEffect } from "react";
 import classes from "./Profile.module.scss";
 import CloseIcon from "@mui/icons-material/Close";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
   const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
   const siteName = (
     <Box sx={{ display: "flex", alignItems: "center" }}>
-      <PersonIcon fontSize="large" sx={{ pr: 1 }} />
+      <PersonIcon color="primary" fontSize="large" sx={{ pr: 1 }} />
       <Typography variant="h5">Profil</Typography>
     </Box>
   );
   const [userData, setUserData] = useState({});
   const [repositoriesList, setRepositoriesList] = useState([]);
   const [alert, setAlert] = useState(0);
+  const navigate = useNavigate();
 
   const getUser = async () => {
     const githubLogin = localStorage.getItem("githubLogin");
@@ -198,8 +201,14 @@ const Profile = () => {
                   ) : (
                     repositoriesList.map((repository) => {
                       return (
-                        <ListItem>
-                          <ListItemText>{repository.name}</ListItemText>
+                        <ListItem key={repository.id}>
+                          <ListItemButton
+                            onClick={() =>
+                              navigate(`/organization/${repository.id}`)
+                            }
+                          >
+                            <ListItemText>{repository.name}</ListItemText>
+                          </ListItemButton>
                         </ListItem>
                       );
                     })

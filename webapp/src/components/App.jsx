@@ -9,7 +9,6 @@ import SingleOrganization from "./SingleOrganization";
 import SingleSection from "./SingleSection";
 import SingUpPage from "./SignUpPage";
 import Profile from "./Profile";
-import RepositoriesList from "./RepositoriesList";
 
 const App = () => {
   return (
@@ -18,7 +17,7 @@ const App = () => {
         <Route exact path="/login" element={<Login />} />
         <Route exact path="/" element={<Organizations />} />
         <Route exact path="/organizations" element={<Organizations />} />
-        <Route exact path="/archive" element={<Archive />} />
+        <Route path="/archive" element={<Archive />} />
         <Route exact path="/teachersList" element={<TeachersList />} />
         <Route exact path="/studentslist" element={<StudentsList />} />
         <Route
@@ -29,7 +28,6 @@ const App = () => {
         <Route exact path="/section/:id" element={<SingleSection />} />
         <Route exact path="/section/form/:code" element={<SingUpPage />} />
         <Route exact path="/profile" element={<Profile />} />
-        <Route exact path="/repositoriesList" element={<RepositoriesList />} />
       </Routes>
     </BrowserRouter>
   );

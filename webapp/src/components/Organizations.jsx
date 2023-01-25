@@ -28,6 +28,7 @@ import LeftBar from "./LeftBar";
 import { useNavigate } from "react-router-dom";
 import CloseIcon from "@mui/icons-material/Close";
 import GroupWorkIcon from "@mui/icons-material/GroupWork";
+import { isAdmin } from "./CheckIsAdmin";
 
 const headCells = [
   { id: "name", label: "Nazwa organizacji", numeric: false },
@@ -44,7 +45,7 @@ const Organizations = () => {
   const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
   const siteName = (
     <Box sx={{ display: "flex", alignItems: "center" }}>
-      <GroupWorkIcon fontSize="large" sx={{ pr: 1 }} />
+      <GroupWorkIcon color="warning" fontSize="large" sx={{ pr: 1 }} />
       <Typography variant="h5">Organizacje</Typography>
     </Box>
   );
@@ -58,11 +59,12 @@ const Organizations = () => {
   const [orgName, setOrgName] = useState("");
   const [openDialog, setOpenDialog] = useState(false);
   const [alertType, setAlertType] = useState(0);
+  const [admin, setAdmin] = useState(false);
   const navigate = useNavigate();
-  console.log(countOfOrgs);
+
   const getOrganizations = async (orderBy, order, filter, page, rows) => {
     await fetch(
-      `http://localhost:5000/api/getOrganizations?perPage=${rows}&page=${page}&orderBy=${orderBy}&order=${order}&filter=${filter}&userId=${localStorage.getItem(
+      `${serverSite}/api/getOrganizations?perPage=${rows}&page=${page}&orderBy=${orderBy}&order=${order}&filter=${filter}&userId=${localStorage.getItem(
         "userId"
       )}`,
       {
@@ -83,7 +85,7 @@ const Organizations = () => {
   const findOrganization = async () => {
     if (orgName) {
       const response = await fetch(
-        "http://localhost:5000/github/findAndCreateOrganization",
+        `${serverSite}/github/findAndCreateOrganization`,
         {
           method: "POST",
           headers: {
@@ -179,7 +181,13 @@ const Organizations = () => {
     setAlertType(0);
   };
 
+  const checkIsAdmin = async () => {
+    const adminTmp = await isAdmin(localStorage.getItem("userId"));
+    setAdmin(adminTmp);
+  };
+
   useEffect(() => {
+    checkIsAdmin();
     getOrganizations(orderBy, order, filter, page, rowsPerPage);
   }, []);
 
@@ -191,13 +199,23 @@ const Organizations = () => {
       <Divider />
       <Box className={classesLayout.contentContainer}>
         <Box className={classesLayout.leftBar}>
-          <LeftBar />
+          <LeftBar chosenItem={"organizations"} />
         </Box>
         <Box className={classesLayout.content}>
           <Box className={classes.topBar}>
-            <Button variant="contained" size="large" onClick={handleOpenDialog}>
-              Dodaj istniejącą
-            </Button>
+            {admin ? (
+              <Button
+                variant="contained"
+                size="large"
+                onClick={handleOpenDialog}
+              >
+                Dodaj istniejącą
+              </Button>
+            ) : (
+              <Button variant="contained" size="large" disabled>
+                Dodaj istniejącą
+              </Button>
+            )}
             <TextField
               label="Filtruj"
               type="search"

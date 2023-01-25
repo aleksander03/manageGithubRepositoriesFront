@@ -28,6 +28,8 @@ import classes from "./StudentsList.module.scss";
 import { useEffect } from "react";
 import GroupIcon from "@mui/icons-material/Group";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { isAdmin } from "./CheckIsAdmin";
+import { useNavigate } from "react-router-dom";
 
 const headCells = [
   { id: "name", label: "Imię", numeric: false },
@@ -41,7 +43,7 @@ const StudentsList = () => {
   const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
   const siteName = (
     <Box sx={{ display: "flex", alignItems: "center" }}>
-      <GroupIcon fontSize="large" sx={{ pr: 1 }} />
+      <GroupIcon color="secondary" fontSize="large" sx={{ pr: 1 }} />
       <Typography variant="h5">Lista studentów</Typography>
     </Box>
   );
@@ -57,6 +59,8 @@ const StudentsList = () => {
   const [chosenStudentRepositories, setChosenStudentRepositories] = useState(
     []
   );
+  const [admin, setAdmin] = useState(true);
+  const navigate = useNavigate();
 
   const getStudents = async (orderBy, order, filter, page, rows) => {
     const userId = localStorage.getItem("userId");
@@ -178,9 +182,17 @@ const StudentsList = () => {
     }
   };
 
+  const checkIsAdmin = async () => {
+    const adminTmp = await isAdmin(localStorage.getItem("userId"));
+    setAdmin(adminTmp);
+  };
+
   useEffect(() => {
+    checkIsAdmin();
     getStudents(orderBy, order, filter, page, rowsPerPage);
   }, []);
+
+  if (!admin) navigate("/");
 
   return (
     <Box className={classesLayout.mainContainer}>
@@ -190,7 +202,7 @@ const StudentsList = () => {
       <Divider />
       <Box className={classesLayout.contentContainer}>
         <Box className={classesLayout.leftBar}>
-          <LeftBar />
+          <LeftBar chosenItem={"studentsList"} />
         </Box>
         <Box className={classesLayout.content}>
           <Box className={classes.textFieldContainer}>

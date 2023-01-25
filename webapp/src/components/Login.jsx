@@ -14,7 +14,7 @@ const Login = () => {
   const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
   const client_id = process.env.REACT_APP_CLIENT_ID;
   const redirectUrl = process.env.REACT_APP_REDIRECT_URL_LOGIN;
-  const scope = "read:user,admin:org,repo";
+  const scope = "read:user,admin:org,repo,delete_repo";
   const githubUrl = `https://github.com/login/oauth/authorize?client_id=${client_id}&scope=${scope}&redirect_uri=${redirectUrl}`;
 
   const logIn = async () => {

@@ -275,6 +275,18 @@ export const addSectionToOrg = async (orgId, professorId, name) => {
     },
   });
 
+  const org = await prisma.organizationsToUsers.findFirst({
+    where: { organization: { id: orgId }, user: { id: professorId } },
+  });
+
+  if (!org)
+    await prisma.organizationsToUsers.create({
+      data: {
+        organization: { connect: { id: orgId } },
+        user: { connect: { id: professorId } },
+      },
+    });
+
   return section;
 };
 
@@ -295,7 +307,7 @@ export const getSection = async (sectionId, userId, isAdmin) => {
     select: {
       id: true,
       name: true,
-      organization: { select: { id: true, name: true } },
+      organization: { select: { id: true, name: true, githubName: true } },
       sectionsToUsers: {
         select: { user: true },
         where: {
@@ -463,9 +475,26 @@ export const getStudentsInQueue = async (sectionId) => {
       usersToRoles: { some: { role: { role: "Student" } } },
       sectionsToUsers: { every: { section: { id: { not: sectionId } } } },
     },
+    select: {
+      id: true,
+      name: true,
+      surname: true,
+      githubLogin: true,
+      studentEmail: true,
+      urlCodesToUsers: {
+        select: { urlCode: { select: { id: true } } },
+        where: { urlCode: { section: { id: sectionId } } },
+      },
+    },
   });
 
   return students;
+};
+
+export const deleteStudentFromQueue = async (userId, urlCode) => {
+  await prisma.urlCodesToUsers.deleteMany({
+    where: { urlCode: { id: urlCode }, user: { id: userId } },
+  });
 };
 
 export const addStudentsToSection = (students, sectionId) => {
@@ -586,10 +615,10 @@ export const addProfessorsToSection = async (sectionId, professorId) => {
   return true;
 };
 
-export const deleteProfessorsFromSection = async (sectionId, professors) => {
-  professors.map(async (professor) => {
+export const deleteUsersFromSection = async (sectionId, users) => {
+  users.map(async (user) => {
     await prisma.sectionsToUsers.deleteMany({
-      where: { section: { id: sectionId }, user: { id: professor } },
+      where: { section: { id: sectionId }, user: { id: user } },
     });
   });
 
@@ -603,11 +632,12 @@ export const deleteSection = async (sectionId) => {
 };
 
 export const createRepositoryForStudent = async (userId, link, sectionId) => {
-  await prisma.repositories.create({
+  await prisma.repositoriesToUsers.create({
     data: {
-      link: link,
-      repositoriesToUsers: { create: { user: { connect: { id: userId } } } },
-      section: { connect: { id: sectionId } },
+      repository: {
+        create: { link: link, section: { connect: { id: sectionId } } },
+      },
+      user: { connect: { id: userId } },
     },
   });
 
@@ -688,7 +718,7 @@ export const deleteRole = async (role, userId) => {
 
 export const getUsersOrgs = async (userId) => {
   const orgs = await prisma.organizations.findMany({
-    select: { name: true },
+    select: { id: true, name: true },
     where: { organizationsToUsers: { some: { user: { id: userId } } } },
   });
 
@@ -721,4 +751,67 @@ export const changeOrgLocalName = async (orgId, newOrgName) => {
     where: { id: orgId },
     data: { name: newOrgName },
   });
+};
+
+export const getOrgForArchive = async (orgId) => {
+  const orgTmp = await prisma.organizations.findFirst({
+    where: { id: orgId },
+    select: {
+      sections: {
+        select: {
+          name: true,
+          sectionsToUsers: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  surname: true,
+                },
+              },
+            },
+            where: {
+              user: { usersToRoles: { every: { role: { role: "Student" } } } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const repositories = await prisma.repositories.findMany({
+    where: {
+      section: { organization: { id: orgId } },
+      repositoriesToUsers: {
+        some: {
+          user: { usersToRoles: { every: { role: { role: "Student" } } } },
+        },
+      },
+    },
+  });
+
+  const combinedArray = [];
+
+  orgTmp.sections.forEach((org) => {
+    const sectionName = org.name;
+    org.sectionsToUsers.forEach((section) => {
+      const id = section.user.id;
+      const name = section.user.name;
+      const surname = section.user.surname;
+      const repos = repositories.filter(
+        (repository) =>
+          repository.link.includes(id) && repository.link.includes(sectionName)
+      );
+
+      combinedArray.push({
+        id: id,
+        name: name,
+        surname: surname,
+        repository: repos[0].link,
+        sectionName: sectionName,
+      });
+    });
+  });
+
+  return combinedArray;
 };
