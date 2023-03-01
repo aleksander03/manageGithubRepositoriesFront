@@ -584,19 +584,19 @@ app.delete("/api/deleteSection", async (req, res) => {
     const sectionId = parseInt(req.body.sectionId);
     const sectionName = req.body.sectionName;
     const userId = req.body.userId;
-    const repositories = req.body.repositories;
+    const users = req.body.users;
     const token = req.body.accessToken;
     const org = req.body.org;
     const octokit = new Octokit({ auth: token });
 
     const notDeletedRepositories = [];
 
-    const promises = repositories.map(async (repository) => {
+    const promises = users.map(async (user) => {
       try {
-        await octokit.repos.delete({ owner: org, repo: repository });
+        await octokit.repos.delete({ owner: org, repo: user + "-repo" });
         await octokit.teams.deleteInOrg({
           org: org,
-          team_slug: userId + "-" + sectionName,
+          team_slug: user,
         });
       } catch (error) {
         notDeletedRepositories.push(repository);

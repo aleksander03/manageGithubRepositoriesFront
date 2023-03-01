@@ -490,8 +490,8 @@ const SingleSection = () => {
   const deleteSection = async () => {
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("accessToken");
-    const usersRepositories = students.map(
-      (student) => student.id + "-" + section.name + "-repo"
+    const users = students.map(
+      (student) => student.id + "-" + section.name
     );
 
     const response = await fetch(`${serverSite}/api/deleteSection`, {
@@ -504,7 +504,7 @@ const SingleSection = () => {
         sectionId: section.id,
         sectionName: section.name,
         userId: userId,
-        repositories: usersRepositories,
+        users: users,
         accessToken: token,
         org: section.organizationGitHub,
       }),
