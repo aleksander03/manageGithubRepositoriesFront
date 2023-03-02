@@ -216,27 +216,27 @@ app.delete("/api/deleteOrganization", async (req, res) => {
   }
 });
 
-app.get("/api/getAvailableProfessors", async (req, res) => {
+app.get("/api/getAvailableTeachers", async (req, res) => {
   try {
     const orgId = parseInt(req.query.orgId);
     const filter = req.query.filter;
 
-    const professors = await client.getAvailableProfessors(orgId, filter);
-    if (professors) res.send(professors);
+    const teachers = await client.getAvailableTeachers(orgId, filter);
+    if (teachers) res.send(teachers);
     else res.sendStatus(204);
   } catch (error) {
     res.send(418);
   }
 });
 
-app.post("/api/addProfessorsToOrganization", async (req, res) => {
+app.post("/api/addTeachersToOrganization", async (req, res) => {
   try {
     const orgId = parseInt(req.body.orgId);
-    const professorsIds = req.body.professorsIds;
+    const teachersIds = req.body.teachersIds;
 
-    const addRelation = await client.addProfessorsToOrganization(
+    const addRelation = await client.addTeachersToOrganization(
       orgId,
-      professorsIds
+      teachersIds
     );
 
     if (addRelation) res.sendStatus(201);
@@ -246,14 +246,14 @@ app.post("/api/addProfessorsToOrganization", async (req, res) => {
   }
 });
 
-app.delete("/api/deleteProfessorsFromOrganization", async (req, res) => {
+app.delete("/api/deleteTeachersFromOrganization", async (req, res) => {
   try {
     const orgId = parseInt(req.body.orgId);
-    const professorId = req.body.userId;
+    const teacherId = req.body.userId;
 
-    const deleteRelation = await client.deleteProfessorsFromOrganization(
+    const deleteRelation = await client.deleteTeachersFromOrganization(
       orgId,
-      professorId
+      teacherId
     );
     if (deleteRelation) res.sendStatus(200);
     else res.sendStatus(503);

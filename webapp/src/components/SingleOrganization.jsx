@@ -28,6 +28,7 @@ import { isAdmin } from "./CheckIsAdmin";
 import * as methods from "./SingleOrganization/methods";
 
 const SingleOrganization = () => {
+  //#region Declaration of variables
   const serverSite = process.env.REACT_APP_REDIRECT_SERVER_URL;
   const urlParams = useParams();
   const editedOrgId = urlParams.id;
@@ -51,6 +52,7 @@ const SingleOrganization = () => {
   const [dialog, setDialog] = useState(0);
   const [admin, setAdmin] = useState(false);
   const navigate = useNavigate();
+  //#endregion
 
   //#region Management of an organization
   const getOrganization = async () => {
@@ -201,7 +203,7 @@ const SingleOrganization = () => {
     });
 
     if (selectedTeachers) {
-      fetch(`${serverSite}/api/addProfessorsToOrganization`, {
+      fetch(`${serverSite}/api/addTeachersToOrganization`, {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -209,7 +211,7 @@ const SingleOrganization = () => {
         },
         body: JSON.stringify({
           orgId: editedOrgId,
-          professorsIds: selectedTeachers,
+          teachersIds: selectedTeachers,
         }),
       });
 
@@ -235,7 +237,7 @@ const SingleOrganization = () => {
     });
 
     deletedTeachers.length > 0 &&
-      fetch(`${serverSite}/api/deleteProfessorsFromOrganization`, {
+      fetch(`${serverSite}/api/deleteTeachersFromOrganization`, {
         method: "DELETE",
         headers: {
           Accept: "application/json",
@@ -255,7 +257,7 @@ const SingleOrganization = () => {
   const getAvailableTeachers = async (filter) => {
     const filterTmp = filter !== undefined ? filter : filterTeachers;
     const response = await fetch(
-      `${serverSite}/api/getAvailableProfessors?orgId=${editedOrgId}&filter=${filterTmp}`,
+      `${serverSite}/api/getAvailableTeachers?orgId=${editedOrgId}&filter=${filterTmp}`,
       {
         method: "GET",
         headers: {
@@ -347,6 +349,7 @@ const SingleOrganization = () => {
     getOrganization();
   }, []);
 
+  //#region Rendered part
   return (
     <Box className={classesLayout.mainContainer}>
       <Box className={classesLayout.topBar}>
@@ -676,6 +679,7 @@ const SingleOrganization = () => {
       </Collapse>
     </Box>
   );
+  //#endregion
 };
 
 export default SingleOrganization;

@@ -222,8 +222,8 @@ export const getOrganization = async (id, userId, isAdmin) => {
   return response;
 };
 
-export const getAvailableProfessors = async (orgId, filter) => {
-  const professors = await prisma.users.findMany({
+export const getAvailableTeachers = async (orgId, filter) => {
+  const teachers = await prisma.users.findMany({
     take: 20,
     where: {
       usersToRoles: { some: { role: { role: { not: "Student" } } } },
@@ -236,15 +236,15 @@ export const getAvailableProfessors = async (orgId, filter) => {
     },
   });
 
-  return professors;
+  return teachers;
 };
 
-export const addProfessorsToOrganization = async (orgId, professorId) => {
-  professorId.map(async (professor) => {
+export const addTeachersToOrganization = async (orgId, teachersIds) => {
+  teachersIds.map(async (teacher) => {
     await prisma.organizationsToUsers.create({
       data: {
         organization: { connect: { id: orgId } },
-        user: { connect: { id: professor } },
+        user: { connect: { id: teacher } },
       },
     });
   });
@@ -252,14 +252,14 @@ export const addProfessorsToOrganization = async (orgId, professorId) => {
   return true;
 };
 
-export const deleteProfessorsFromOrganization = async (orgId, professorId) => {
-  professorId.map(async (professor) => {
+export const deleteTeachersFromOrganization = async (orgId, teacherId) => {
+  teacherId.map(async (teacher) => {
     await prisma.organizationsToUsers.deleteMany({
-      where: { userId: professor, organizationId: orgId },
+      where: { userId: teacher, organizationId: orgId },
     });
 
     await prisma.sectionsToUsers.deleteMany({
-      where: { userId: professor, section: { organization: { id: orgId } } },
+      where: { userId: teacher, section: { organization: { id: orgId } } },
     });
   });
 
@@ -565,7 +565,7 @@ export const deleteUserToSectionRelation = async (githubLogin) => {
 };
 
 export const getAvailableProfessorsForSection = async (sectionId, filter) => {
-  const professors = await prisma.users.findMany({
+  const teachers = await prisma.users.findMany({
     take: 20,
     where: {
       usersToRoles: { some: { role: { role: { not: "Student" } } } },
@@ -578,7 +578,7 @@ export const getAvailableProfessorsForSection = async (sectionId, filter) => {
     },
   });
 
-  return professors;
+  return teachers;
 };
 
 export const addProfessorsToSection = async (sectionId, professorId) => {
