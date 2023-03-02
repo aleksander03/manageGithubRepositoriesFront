@@ -23,29 +23,20 @@ app.get("/api/isAdmin", async (req, res) => {
   else res.sendStatus(418);
 });
 
-app.get("/api/login", async (req, res) => {
+app.get("/api/checkIsCodeExpired", async (req, res) => {
   try {
-    const clientId = process.env.REACT_APP_CLIENT_ID;
-    const clientSecretId = process.env.REACT_APP_CLIENT_SECRET;
-    const clientCode = req.query.code;
+    const code = req.query.code;
 
-    await request.post(
-      {
-        url: `https://github.com/login/oauth/access_token/?client_id=${clientId}&client_secret=${clientSecretId}&code=${clientCode}`,
-        headers: {
-          "User-Agent": "request",
-          Accept: "application/json",
-        },
-      },
-      function (error, response, body) {
-        res.send(body);
-      }
-    );
+    const isCodeExpired = await client.checkIsCodeExpired(code);
+    if (isCodeExpired)
+      if (isCodeExpired.expireDate > new Date()) res.sendStatus(200);
+      else res.sendStatus(418);
   } catch (error) {
-    res.send(error);
+    console.error(error);
   }
 });
 
+//#region Login
 app.post("/api/getUser", async (req, res) => {
   try {
     const token = req.body.token;
@@ -78,58 +69,31 @@ app.post("/api/getUser", async (req, res) => {
   }
 });
 
-app.get("/api/getUserByLogin", async (req, res) => {
+app.get("/api/login", async (req, res) => {
   try {
-    const githubLogin = req.query.githubLogin;
-    const userId = req.query.userId;
+    const clientId = process.env.REACT_APP_CLIENT_ID;
+    const clientSecretId = process.env.REACT_APP_CLIENT_SECRET;
+    const clientCode = req.query.code;
 
-    const user = await client.findUserBygithubLogin(githubLogin);
-    const orgs = await client.getUsersOrgs(userId);
-
-    res.send([user, orgs]);
+    await request.post(
+      {
+        url: `https://github.com/login/oauth/access_token/?client_id=${clientId}&client_secret=${clientSecretId}&code=${clientCode}`,
+        headers: {
+          "User-Agent": "request",
+          Accept: "application/json",
+        },
+      },
+      function (error, response, body) {
+        res.send(body);
+      }
+    );
   } catch (error) {
-    console.error(error);
+    res.send(error);
   }
 });
+//#endregion
 
-app.put("/api/changeUserData", async (req, res) => {
-  try {
-    const userData = req.body.userData;
-
-    const user = await client.changeUserData(userData);
-
-    if (user) res.sendStatus(200);
-    else res.sendStatus(418);
-  } catch (error) {
-    console.error(error);
-  }
-});
-
-app.post("/github/findAndCreateOrganization", async (req, res) => {
-  try {
-    const token = req.body.token;
-    const org = req.body.org;
-    const octokit = new Octokit({ auth: token });
-
-    const response = await octokit.request("GET /orgs/{org}", {
-      org: org,
-    });
-    const isOrgExist = await client.checkIfOrgExist(response.data.login);
-    if (isOrgExist) {
-      res.sendStatus(204);
-    } else {
-      const organization = await client.addExistingOrganization(
-        response.data.login,
-        response.data.login,
-        response.data.html_url
-      );
-      res.send(organization);
-    }
-  } catch (error) {
-    res.sendStatus(418);
-  }
-});
-
+//#region Organizations
 app.get("/api/getOrganizations", async (req, res) => {
   try {
     const orderBy = req.query.orderBy;
@@ -157,21 +121,61 @@ app.get("/api/getOrganizations", async (req, res) => {
   }
 });
 
-app.get("/api/getOrganization", async (req, res) => {
+app.post("/github/findAndCreateOrganization", async (req, res) => {
   try {
-    const id = parseInt(req.query.id);
-    const userId = req.query.userId;
+    const token = req.body.token;
+    const org = req.body.org;
+    const octokit = new Octokit({ auth: token });
 
-    const isAdmin = await client.isAdmin(userId);
-    const organization = await client.getOrganization(id, userId, isAdmin);
-
-    if (organization) {
-      res.send(organization);
-    } else {
+    const response = await octokit.request("GET /orgs/{org}", {
+      org: org,
+    });
+    const isOrgExist = await client.checkIfOrgExist(response.data.login);
+    if (isOrgExist) {
       res.sendStatus(204);
+    } else {
+      const organization = await client.addExistingOrganization(
+        response.data.login,
+        response.data.login,
+        response.data.html_url
+      );
+      res.send(organization);
     }
   } catch (error) {
-    console.error(error);
+    res.sendStatus(418);
+  }
+});
+//#endregion
+
+//#region Single Organization
+app.put("/api/addSectionToOrg", async (req, res) => {
+  try {
+    const orgId = parseInt(req.query.orgId);
+    const professorId = req.query.userId;
+    const name = req.query.name;
+
+    const section = await client.addSectionToOrg(orgId, professorId, name);
+    if (section) res.send(section);
+    else res.sendStatus(503);
+  } catch (error) {
+    res.send(error);
+  }
+});
+
+app.post("/api/addTeachersToOrganization", async (req, res) => {
+  try {
+    const orgId = parseInt(req.body.orgId);
+    const teachersIds = req.body.teachersIds;
+
+    const addRelation = await client.addTeachersToOrganization(
+      orgId,
+      teachersIds
+    );
+
+    if (addRelation) res.sendStatus(201);
+    else res.sendStatus(503);
+  } catch (error) {
+    res.send(error);
   }
 });
 
@@ -216,36 +220,6 @@ app.delete("/api/deleteOrganization", async (req, res) => {
   }
 });
 
-app.get("/api/getAvailableTeachers", async (req, res) => {
-  try {
-    const orgId = parseInt(req.query.orgId);
-    const filter = req.query.filter;
-
-    const teachers = await client.getAvailableTeachers(orgId, filter);
-    if (teachers) res.send(teachers);
-    else res.sendStatus(204);
-  } catch (error) {
-    res.send(418);
-  }
-});
-
-app.post("/api/addTeachersToOrganization", async (req, res) => {
-  try {
-    const orgId = parseInt(req.body.orgId);
-    const teachersIds = req.body.teachersIds;
-
-    const addRelation = await client.addTeachersToOrganization(
-      orgId,
-      teachersIds
-    );
-
-    if (addRelation) res.sendStatus(201);
-    else res.sendStatus(503);
-  } catch (error) {
-    res.send(error);
-  }
-});
-
 app.delete("/api/deleteTeachersFromOrganization", async (req, res) => {
   try {
     const orgId = parseInt(req.body.orgId);
@@ -262,58 +236,149 @@ app.delete("/api/deleteTeachersFromOrganization", async (req, res) => {
   }
 });
 
-app.get("/api/getSection", async (req, res) => {
+app.get("/api/getOrganization", async (req, res) => {
   try {
-    const sectionId = parseInt(req.query.sectionId);
+    const id = parseInt(req.query.id);
     const userId = req.query.userId;
 
     const isAdmin = await client.isAdmin(userId);
+    const organization = await client.getOrganization(id, userId, isAdmin);
 
-    const section = await client.getSection(sectionId, userId, isAdmin);
-    if (section) res.send(section);
-    else res.sendStatus(404);
+    if (organization) {
+      res.send(organization);
+    } else {
+      res.sendStatus(204);
+    }
   } catch (error) {
     console.error(error);
   }
 });
 
-app.put("/api/addSectionToOrg", async (req, res) => {
+app.put("/api/changeOrgLocalName", async (req, res) => {
   try {
     const orgId = parseInt(req.query.orgId);
-    const professorId = req.query.userId;
-    const name = req.query.name;
+    const newOrgName = req.query.newOrgName;
 
-    const section = await client.addSectionToOrg(orgId, professorId, name);
-    if (section) res.send(section);
+    await client.changeOrgLocalName(orgId, newOrgName);
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.get("/api/getAvailableTeachers", async (req, res) => {
+  try {
+    const orgId = parseInt(req.query.orgId);
+    const filter = req.query.filter;
+
+    const teachers = await client.getAvailableTeachers(orgId, filter);
+    if (teachers) res.send(teachers);
+    else res.sendStatus(204);
+  } catch (error) {
+    res.send(418);
+  }
+});
+
+app.post("/github/archive", async (req, res) => {
+  try {
+    const orgId = parseInt(req.body.orgId);
+    const orgName = req.body.orgName;
+
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
+    const day = currentDate.getDate();
+    const hour = currentDate.getHours();
+    const minute = currentDate.getMinutes();
+    const formatedDate = `${year}-${month}-${day}-${hour}-${minute}`;
+
+    const git = simpleGit();
+
+    const sections = await client.getOrgForArchive(orgId);
+    const notDeletedRepositories = [];
+
+    const promises = sections.map(async (repository) => {
+      try {
+        const folderName = `${orgName}_${formatedDate}/${
+          repository.sectionName
+        }/${repository.name + "_" + repository.surname}`;
+
+        await git.clone(repository.repository, `./Archiwum/${folderName}`);
+        const output = fs.createWriteStream(`./Archiwum/${folderName}.zip`);
+        const archive = archiver("zip", { zlib: { level: 9 } });
+        output.on("close", async () => {
+          await fs.rm(
+            `./Archiwum/${folderName}`,
+            { recursive: true },
+            (err) => {
+              if (err) console.error(err);
+            }
+          );
+        });
+        archive.pipe(output);
+        archive.directory(`./Archiwum/${folderName}`, "");
+        archive.finalize();
+      } catch (err) {
+        notDeletedRepositories.push(repository);
+      }
+    });
+
+    await Promise.all(promises);
+    res.send(notDeletedRepositories);
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .send({ message: "Wystąpił błąd podczas tworzenia archiwum" });
+  }
+});
+//#endregion
+
+//#region Profile
+app.put("/api/changeUserData", async (req, res) => {
+  try {
+    const userData = req.body.userData;
+
+    const user = await client.changeUserData(userData);
+
+    if (user) res.sendStatus(200);
+    else res.sendStatus(418);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.get("/api/getUserByLogin", async (req, res) => {
+  try {
+    const githubLogin = req.query.githubLogin;
+    const userId = req.query.userId;
+
+    const user = await client.findUserBygithubLogin(githubLogin);
+    const orgs = await client.getUsersOrgs(userId);
+
+    res.send([user, orgs]);
+  } catch (error) {
+    console.error(error);
+  }
+});
+//#endregion
+
+//#region Single Section
+app.post("/api/addProfessorsToSection", async (req, res) => {
+  try {
+    const sectionId = parseInt(req.body.sectionId);
+    const professorsIds = req.body.professorsIds;
+
+    const addRelation = await client.addProfessorsToSection(
+      sectionId,
+      professorsIds
+    );
+
+    if (addRelation) res.sendStatus(201);
     else res.sendStatus(503);
   } catch (error) {
     res.send(error);
-  }
-});
-
-app.get("/api/generateCode", async (req, res) => {
-  try {
-    const userId = req.query.userId;
-    const sectionId = parseInt(req.query.sectionId);
-
-    const code = await client.generateCode(userId, sectionId);
-    if (code) res.send(JSON.stringify(code));
-    else res.sendStatus(403);
-  } catch (error) {
-    console.error(error);
-  }
-});
-
-app.get("/api/checkIsCodeExpired", async (req, res) => {
-  try {
-    const code = req.query.code;
-
-    const isCodeExpired = await client.checkIsCodeExpired(code);
-    if (isCodeExpired)
-      if (isCodeExpired.expireDate > new Date()) res.sendStatus(200);
-      else res.sendStatus(418);
-  } catch (error) {
-    console.error(error);
   }
 });
 
@@ -361,99 +426,6 @@ app.put("/api/addStudentFromLink", async (req, res) => {
     } catch (e) {
       res.sendStatus(404);
     }
-  } catch (error) {
-    console.error(error);
-  }
-});
-
-app.get("/api/getStudentsInQueue", async (req, res) => {
-  try {
-    const sectionId = parseInt(req.query.sectionId);
-
-    const students = await client.getStudentsInQueue(sectionId);
-
-    if (students) res.send(students);
-    else res.sendStatus(404);
-  } catch (error) {
-    console.error(error);
-  }
-});
-
-app.delete("/api/deleteStudentFromQueue", async (req, res) => {
-  try {
-    const userId = req.body.userId;
-    const urlCode = req.body.urlCode;
-
-    await client.deleteStudentFromQueue(userId, urlCode);
-
-    res.sendStatus(200);
-  } catch (error) {
-    console.error(error);
-  }
-});
-
-app.post("/api/addStudentsToSection", async (req, res) => {
-  try {
-    const users = req.body.users;
-    const sectionId = req.body.sectionId;
-    const sectionName = req.body.sectionName;
-    const token = req.body.token;
-    const orgName = req.body.orgName;
-    const template_name = req.body.templateName;
-    const octokit = new Octokit({ auth: token });
-
-    users.map(async (student) => {
-      try {
-        let repo;
-
-        if (template_name === "") {
-          const { data: repoTmp } = await octokit.repos.createInOrg({
-            org: orgName,
-            name: student.id + "-" + sectionName + "-repo",
-            private: true,
-            auto_init: true,
-          });
-
-          repo = repoTmp;
-        } else {
-          const { data: repoTmp } = await octokit.repos.createUsingTemplate({
-            template_owner: orgName,
-            template_repo: "template",
-            name: student.id + "-" + sectionName + "-repo",
-            private: true,
-            owner: orgName,
-          });
-
-          repo = repoTmp;
-        }
-
-        const { data: team } = await octokit.teams.create({
-          org: orgName,
-          name: student.id + "-" + sectionName,
-          privacy: "closed",
-          permission: "push",
-          repo_names: [`${orgName}/${repo.name}`],
-        });
-
-        await client.createRepositoryForStudent(
-          student.id,
-          repo.html_url,
-          sectionId
-        );
-
-        await octokit.teams.addOrUpdateMembershipForUserInOrg({
-          team_slug: team.slug,
-          org: orgName,
-          username: student.githubLogin,
-        });
-      } catch (e) {
-        console.error(e);
-      }
-    });
-
-    const students = await client.addStudentsToSection(users, sectionId);
-    if (students) res.sendStatus(200);
-    else res.sendStatus(418);
   } catch (error) {
     console.error(error);
   }
@@ -552,36 +524,70 @@ app.post("/api/addStudentsFromCSV", async (req, res) => {
   res.send(notAcceptedUsers);
 });
 
-app.get("/api/getAvailableProfessorsForSection", async (req, res) => {
+app.post("/api/addStudentsToSection", async (req, res) => {
   try {
-    const sectionId = parseInt(req.query.sectionId);
-    const filter = req.query.filter;
+    const users = req.body.users;
+    const sectionId = req.body.sectionId;
+    const sectionName = req.body.sectionName;
+    const token = req.body.token;
+    const orgName = req.body.orgName;
+    const template_name = req.body.templateName;
+    const octokit = new Octokit({ auth: token });
 
-    const professors = await client.getAvailableProfessorsForSection(
-      sectionId,
-      filter
-    );
-    if (professors) res.send(professors);
-    else res.sendStatus(204);
+    users.map(async (student) => {
+      try {
+        let repo;
+
+        if (template_name === "") {
+          const { data: repoTmp } = await octokit.repos.createInOrg({
+            org: orgName,
+            name: student.id + "-" + sectionName + "-repo",
+            private: true,
+            auto_init: true,
+          });
+
+          repo = repoTmp;
+        } else {
+          const { data: repoTmp } = await octokit.repos.createUsingTemplate({
+            template_owner: orgName,
+            template_repo: "template",
+            name: student.id + "-" + sectionName + "-repo",
+            private: true,
+            owner: orgName,
+          });
+
+          repo = repoTmp;
+        }
+
+        const { data: team } = await octokit.teams.create({
+          org: orgName,
+          name: student.id + "-" + sectionName,
+          privacy: "closed",
+          permission: "push",
+          repo_names: [`${orgName}/${repo.name}`],
+        });
+
+        await client.createRepositoryForStudent(
+          student.id,
+          repo.html_url,
+          sectionId
+        );
+
+        await octokit.teams.addOrUpdateMembershipForUserInOrg({
+          team_slug: team.slug,
+          org: orgName,
+          username: student.githubLogin,
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    });
+
+    const students = await client.addStudentsToSection(users, sectionId);
+    if (students) res.sendStatus(200);
+    else res.sendStatus(418);
   } catch (error) {
-    res.send(418);
-  }
-});
-
-app.post("/api/addProfessorsToSection", async (req, res) => {
-  try {
-    const sectionId = parseInt(req.body.sectionId);
-    const professorsIds = req.body.professorsIds;
-
-    const addRelation = await client.addProfessorsToSection(
-      sectionId,
-      professorsIds
-    );
-
-    if (addRelation) res.sendStatus(201);
-    else res.sendStatus(503);
-  } catch (error) {
-    res.send(error);
+    console.error(error);
   }
 });
 
@@ -644,57 +650,73 @@ app.delete("/api/deleteSection", async (req, res) => {
   }
 });
 
-app.post("/github/archive", async (req, res) => {
+app.delete("/api/deleteStudentFromQueue", async (req, res) => {
   try {
-    const orgId = parseInt(req.body.orgId);
-    const orgName = req.body.orgName;
+    const userId = req.body.userId;
+    const urlCode = req.body.urlCode;
 
-    const currentDate = new Date();
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth() + 1;
-    const day = currentDate.getDate();
-    const hour = currentDate.getHours();
-    const minute = currentDate.getMinutes();
-    const formatedDate = `${year}-${month}-${day}-${hour}-${minute}`;
+    await client.deleteStudentFromQueue(userId, urlCode);
 
-    const git = simpleGit();
-
-    const sections = await client.getOrgForArchive(orgId);
-    const notDeletedRepositories = [];
-
-    const promises = sections.map(async (repository) => {
-      try {
-        const folderName = `${orgName}_${formatedDate}/${
-          repository.sectionName
-        }/${repository.name + "_" + repository.surname}`;
-
-        await git.clone(repository.repository, `./Archiwum/${folderName}`);
-        const output = fs.createWriteStream(`./Archiwum/${folderName}.zip`);
-        const archive = archiver("zip", { zlib: { level: 9 } });
-        output.on("close", async () => {
-          await fs.rm(
-            `./Archiwum/${folderName}`,
-            { recursive: true },
-            (err) => {
-              if (err) console.error(err);
-            }
-          );
-        });
-        archive.pipe(output);
-        archive.directory(`./Archiwum/${folderName}`, "");
-        archive.finalize();
-      } catch (err) {
-        notDeletedRepositories.push(repository);
-      }
-    });
-
-    await Promise.all(promises);
-    res.send(notDeletedRepositories);
+    res.sendStatus(200);
   } catch (error) {
     console.error(error);
-    res
-      .status(500)
-      .send({ message: "Wystąpił błąd podczas tworzenia archiwum" });
+  }
+});
+
+app.get("/api/getAvailableProfessorsForSection", async (req, res) => {
+  try {
+    const sectionId = parseInt(req.query.sectionId);
+    const filter = req.query.filter;
+
+    const professors = await client.getAvailableProfessorsForSection(
+      sectionId,
+      filter
+    );
+    if (professors) res.send(professors);
+    else res.sendStatus(204);
+  } catch (error) {
+    res.send(418);
+  }
+});
+
+app.get("/api/getSection", async (req, res) => {
+  try {
+    const sectionId = parseInt(req.query.sectionId);
+    const userId = req.query.userId;
+
+    const isAdmin = await client.isAdmin(userId);
+
+    const section = await client.getSection(sectionId, userId, isAdmin);
+    if (section) res.send(section);
+    else res.sendStatus(404);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.get("/api/getStudentsInQueue", async (req, res) => {
+  try {
+    const sectionId = parseInt(req.query.sectionId);
+
+    const students = await client.getStudentsInQueue(sectionId);
+
+    if (students) res.send(students);
+    else res.sendStatus(404);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.get("/api/generateCode", async (req, res) => {
+  try {
+    const userId = req.query.userId;
+    const sectionId = parseInt(req.query.sectionId);
+
+    const code = await client.generateCode(userId, sectionId);
+    if (code) res.send(JSON.stringify(code));
+    else res.sendStatus(403);
+  } catch (error) {
+    console.error(error);
   }
 });
 
@@ -720,6 +742,59 @@ app.post("/github/createIssue", (req, res) => {
         console.error(err);
       }
     });
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error(error);
+  }
+});
+//#endregion
+
+//#region Archive
+app.delete("/api/deleteArchive", (req, res) => {
+  try {
+    const filePath = req.query.filePath;
+
+    fs.remove(`./${filePath}`)
+      .then(() => res.sendStatus(200))
+      .catch((err) => res.sendStatus(418));
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.get("/api/downloadFile", (req, res) => {
+  try {
+    const directory = req.query.directory;
+    const fileName = req.query.fileName;
+
+    res.download(`.${directory}/${fileName}`);
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+app.get("/api/getArchive", (req, res) => {
+  try {
+    const directory = req.query.directory;
+
+    fs.readdir(`./${directory}`, (err, files) => {
+      if (err) res.sendStatus(418);
+      else res.send(files);
+    });
+  } catch (error) {
+    console.error(error);
+  }
+});
+//#endregion
+
+//#region Teachers and Students Lists
+app.delete("/api/deleteRole", (req, res) => {
+  try {
+    const role = req.query.role;
+    const userId = req.query.userId;
+
+    client.deleteRole(role, userId);
 
     res.sendStatus(200);
   } catch (error) {
@@ -758,19 +833,6 @@ app.put("/api/giveRole", (req, res) => {
     client.giveRole(role, userId);
 
     res.sendStatus(201);
-  } catch (error) {
-    console.error(error);
-  }
-});
-
-app.delete("/api/deleteRole", (req, res) => {
-  try {
-    const role = req.query.role;
-    const userId = req.query.userId;
-
-    client.deleteRole(role, userId);
-
-    res.sendStatus(200);
   } catch (error) {
     console.error(error);
   }
@@ -840,55 +902,7 @@ app.get("/api/getUsersRepositories", async (req, res) => {
     console.error(error);
   }
 });
-
-app.put("/api/changeOrgLocalName", async (req, res) => {
-  try {
-    const orgId = parseInt(req.query.orgId);
-    const newOrgName = req.query.newOrgName;
-
-    await client.changeOrgLocalName(orgId, newOrgName);
-
-    res.sendStatus(200);
-  } catch (error) {
-    console.error(error);
-  }
-});
-
-app.get("/api/getArchive", (req, res) => {
-  try {
-    const directory = req.query.directory;
-
-    fs.readdir(`./${directory}`, (err, files) => {
-      if (err) res.sendStatus(418);
-      else res.send(files);
-    });
-  } catch (error) {
-    console.error(error);
-  }
-});
-
-app.delete("/api/deleteArchive", (req, res) => {
-  try {
-    const filePath = req.query.filePath;
-
-    fs.remove(`./${filePath}`)
-      .then(() => res.sendStatus(200))
-      .catch((err) => res.sendStatus(418));
-  } catch (error) {
-    console.error(error);
-  }
-});
-
-app.get("/api/downloadFile", (req, res) => {
-  try {
-    const directory = req.query.directory;
-    const fileName = req.query.fileName;
-
-    res.download(`.${directory}/${fileName}`);
-  } catch (error) {
-    console.error(error);
-  }
-});
+//#endregion
 
 app.get("/", function (req, res) {
   res.send("Get something");
