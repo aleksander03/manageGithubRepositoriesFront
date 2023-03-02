@@ -74,6 +74,7 @@ const SingleSection = () => {
   const [rejectedStudents, setRejectedStudents] = useState([]);
   const [admin, setAdmin] = useState(false);
   const navigate = useNavigate();
+  console.log(students);
 
   const getSection = async () => {
     const response = await fetch(
@@ -131,7 +132,7 @@ const SingleSection = () => {
               repositories: repositories,
             });
           });
-        console.log(studentsList);
+
         setProfessors(professorsList);
         setStudents(studentsList);
       });
@@ -193,9 +194,7 @@ const SingleSection = () => {
             <ListItemText
               primary={`${student.name} ${student.surname}`}
               secondary={student.studentEmail}
-            >
-              {student.repositories.link}
-            </ListItemText>
+            />
             <Checkbox checked={student.isSelected} />
           </ListItemButton>
         </ListItem>
@@ -262,7 +261,7 @@ const SingleSection = () => {
 
     if (response.status === 200) {
       setDialog(0);
-      getSection();
+      setStudents((oldStudents) => [...oldStudents, ...studentsInQueue]);
     }
   };
 
@@ -488,6 +487,8 @@ const SingleSection = () => {
   };
 
   const deleteSection = async () => {
+    setDialog(0);
+    setLoading(true);
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("accessToken");
     const users = students.map(

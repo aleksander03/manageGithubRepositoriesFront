@@ -17,12 +17,11 @@ app.use(cors());
 app.get("/api/isAdmin", async (req, res) => {
   const userId = req.query.userId;
 
-  const isAdmin = await client.isAdmin(userId)
-  console.log(isAdmin)
+  const isAdmin = await client.isAdmin(userId);
 
-  if(isAdmin) res.sendStatus(200);
+  if (isAdmin) res.sendStatus(200);
   else res.sendStatus(418);
-})
+});
 
 app.get("/api/login", async (req, res) => {
   try {
@@ -178,11 +177,36 @@ app.get("/api/getOrganization", async (req, res) => {
 
 app.delete("/api/deleteOrganization", async (req, res) => {
   try {
-    const orgId = parseInt(req.query.orgId);
-    const userId = req.query.userId;
+    const orgId = parseInt(req.body.orgId);
+    const userId = req.body.userId;
+    const token = req.body.token;
+
+    const octokit = new Octokit({ auth: token });
+
+    const repos = await client.getOrgRepos(orgId);
+
+    const promises = repos.map(async (repo) => {
+      try {
+        const repoLinkTable = repo.link.split("/");
+        const orgName = repoLinkTable[repoLinkTable.length - 2];
+        const repoName = repoLinkTable[repoLinkTable.length - 1];
+        const teamName = repoName.slice(0, -5);
+
+        await octokit.repos.delete({ owner: orgName, repo: repoName });
+        await octokit.teams.deleteInOrg({
+          org: orgName,
+          team_slug: teamName,
+        });
+      } catch (error) {
+        // notDeletedRepositories.push(repository);
+        console.error(error);
+      }
+    });
 
     const isAdmin = await client.isAdmin(userId);
     if (isAdmin) {
+      if (promises) await Promise.all(promises);
+
       const org = await client.deleteOrganization(orgId);
       if (org) res.sendStatus(200);
       else res.sendStatus(418);
@@ -217,7 +241,6 @@ app.post("/api/addProfessorsToOrganization", async (req, res) => {
 
     if (addRelation) res.sendStatus(201);
     else res.sendStatus(503);
-
   } catch (error) {
     res.send(error);
   }
@@ -557,7 +580,6 @@ app.post("/api/addProfessorsToSection", async (req, res) => {
 
     if (addRelation) res.sendStatus(201);
     else res.sendStatus(503);
-
   } catch (error) {
     res.send(error);
   }
@@ -861,7 +883,6 @@ app.get("/api/downloadFile", (req, res) => {
   try {
     const directory = req.query.directory;
     const fileName = req.query.fileName;
-    console.log(`.${directory}/${fileName}`);
 
     res.download(`.${directory}/${fileName}`);
   } catch (error) {

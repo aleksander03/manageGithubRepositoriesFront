@@ -358,18 +358,19 @@ const SingleOrganization = () => {
   };
 
   const deleteOrganization = async () => {
-    const response = await fetch(
-      `${serverSite}/api/deleteOrganization?orgId=${editedOrgId}&userId=${localStorage.getItem(
-        "userId"
-      )}`,
-      {
-        method: "DELETE",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await fetch(`${serverSite}/api/deleteOrganization`, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        orgId: editedOrgId,
+        userId: localStorage.getItem("userId"),
+        token: localStorage.getItem("accessToken"),
+      }),
+    });
+    
     if (response.status === 200) navigate("/organizations");
   };
 

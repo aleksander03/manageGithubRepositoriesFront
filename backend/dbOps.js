@@ -815,3 +815,17 @@ export const getOrgForArchive = async (orgId) => {
 
   return combinedArray;
 };
+
+export const getOrgRepos = async (orgId) => {
+  const repos = await prisma.repositories.findMany({
+    where: {
+      section: {
+        organization: {
+          id: orgId,
+        },
+      },
+    },
+  });
+
+  return repos;
+};
