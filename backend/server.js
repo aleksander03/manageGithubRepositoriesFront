@@ -365,14 +365,14 @@ app.get("/api/getUserByLogin", async (req, res) => {
 //#endregion
 
 //#region Single Section
-app.post("/api/addProfessorsToSection", async (req, res) => {
+app.post("/api/addTeachersToSection", async (req, res) => {
   try {
     const sectionId = parseInt(req.body.sectionId);
-    const professorsIds = req.body.professorsIds;
+    const teachersIds = req.body.teachersIds;
 
-    const addRelation = await client.addProfessorsToSection(
+    const addRelation = await client.addTeachersToSection(
       sectionId,
-      professorsIds
+      teachersIds
     );
 
     if (addRelation) res.sendStatus(201);
@@ -591,14 +591,14 @@ app.post("/api/addStudentsToSection", async (req, res) => {
   }
 });
 
-app.delete("/api/deleteProfessorsFromSection", async (req, res) => {
+app.delete("/api/deleteTeachersFromSection", async (req, res) => {
   try {
     const sectionId = parseInt(req.body.sectionId);
-    const professorId = req.body.userId;
+    const teacherId = req.body.userId;
 
     const deleteRelation = await client.deleteUsersFromSection(
       sectionId,
-      professorId
+      teacherId
     );
     if (deleteRelation) res.sendStatus(200);
     else res.sendStatus(503);
@@ -610,7 +610,6 @@ app.delete("/api/deleteProfessorsFromSection", async (req, res) => {
 app.delete("/api/deleteSection", async (req, res) => {
   try {
     const sectionId = parseInt(req.body.sectionId);
-    const sectionName = req.body.sectionName;
     const userId = req.body.userId;
     const users = req.body.users;
     const token = req.body.accessToken;
@@ -663,16 +662,16 @@ app.delete("/api/deleteStudentFromQueue", async (req, res) => {
   }
 });
 
-app.get("/api/getAvailableProfessorsForSection", async (req, res) => {
+app.get("/api/getAvailableTeachersForSection", async (req, res) => {
   try {
     const sectionId = parseInt(req.query.sectionId);
     const filter = req.query.filter;
 
-    const professors = await client.getAvailableProfessorsForSection(
+    const teachers = await client.getAvailableTeachersForSection(
       sectionId,
       filter
     );
-    if (professors) res.send(professors);
+    if (teachers) res.send(teachers);
     else res.sendStatus(204);
   } catch (error) {
     res.send(418);

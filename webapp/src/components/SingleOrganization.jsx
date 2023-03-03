@@ -25,7 +25,11 @@ import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import CircularProgress from "@mui/material/CircularProgress";
 import CloseIcon from "@mui/icons-material/Close";
 import { isAdmin } from "./CheckIsAdmin";
-import * as methods from "./SingleOrganization/methods";
+import {
+  TeachersList,
+  SectionsList,
+  DialogScreen,
+} from "./SingleOrganization/methods";
 
 const SingleOrganization = () => {
   //#region Declaration of variables
@@ -216,10 +220,7 @@ const SingleOrganization = () => {
       });
 
       if (teachers.length > 0) {
-        setTeachers((oldTeachers) => [
-          ...oldTeachers,
-          ...newTeachersTmp,
-        ]);
+        setTeachers((oldTeachers) => [...oldTeachers, ...newTeachersTmp]);
       } else setTeachers(newTeachersTmp);
     }
   };
@@ -349,7 +350,6 @@ const SingleOrganization = () => {
     getOrganization();
   }, []);
 
-  //#region Rendered part
   return (
     <Box className={classesLayout.mainContainer}>
       <Box className={classesLayout.topBar}>
@@ -518,7 +518,7 @@ const SingleOrganization = () => {
                   sx={{ maxWidth: "30vw" }}
                   className={classes.contentList}
                 >
-                  <methods.TeachersList
+                  <TeachersList
                     teachers={teachers}
                     setSelectedTeachers={setSelectedTeachers}
                   />
@@ -566,10 +566,7 @@ const SingleOrganization = () => {
                   sx={{ maxWidth: "30vw" }}
                   className={classes.contentList}
                 >
-                  <methods.SectionsList
-                    sections={sections}
-                    navigate={navigate}
-                  />
+                  <SectionsList sections={sections} navigate={navigate} />
                 </List>
                 {admin && (
                   <Button
@@ -591,7 +588,7 @@ const SingleOrganization = () => {
         onClose={handleCloseDialog}
         PaperProps={{ style: { backgroundColor: "#d9d9d9" } }}
       >
-        <methods.DialogScreen
+        <DialogScreen
           addSection={addSection}
           addSelectedTeachersToOrg={addSelectedTeachersToOrg}
           availableTeachers={availableTeachers}
@@ -679,7 +676,6 @@ const SingleOrganization = () => {
       </Collapse>
     </Box>
   );
-  //#endregion
 };
 
 export default SingleOrganization;

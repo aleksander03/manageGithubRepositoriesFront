@@ -345,11 +345,11 @@ export const getUsersOrgs = async (userId) => {
 //#endregion
 
 //#region Single Section
-export const addProfessorsToSection = async (sectionId, professorId) => {
-  professorId.map(async (professor) => {
+export const addTeachersToSection = async (sectionId, teacherId) => {
+  teacherId.map(async (teacher) => {
     const isUserInOrg = await prisma.organizationsToUsers.findFirst({
       where: {
-        user: { id: professor },
+        user: { id: teacher },
         organization: { sections: { some: { id: sectionId } } },
       },
     });
@@ -363,7 +363,7 @@ export const addProfessorsToSection = async (sectionId, professorId) => {
       await prisma.organizationsToUsers.create({
         data: {
           organization: { connect: { id: orgId.id } },
-          user: { connect: { id: professor } },
+          user: { connect: { id: teacher } },
         },
       });
     }
@@ -371,7 +371,7 @@ export const addProfessorsToSection = async (sectionId, professorId) => {
     await prisma.sectionsToUsers.create({
       data: {
         section: { connect: { id: sectionId } },
-        user: { connect: { id: professor } },
+        user: { connect: { id: teacher } },
       },
     });
   });
@@ -625,7 +625,7 @@ export const deleteSection = async (sectionId) => {
   return true;
 };
 
-export const getAvailableProfessorsForSection = async (sectionId, filter) => {
+export const getAvailableTeachersForSection = async (sectionId, filter) => {
   const teachers = await prisma.users.findMany({
     take: 20,
     where: {
