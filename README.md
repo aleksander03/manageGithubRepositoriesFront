@@ -2,7 +2,9 @@
 
 ***Wymagania przed instalacją***
 **NodeJS** - pobrać (https://nodejs.org/en/download/) i zainstalować
+
 **PostgreSQL** - pobrać (https://www.postgresql.org/download/windows/) i zainstalować
+
 **OAuth App** - utworzyć nową aplikację OAuth na platformie GitHub
 
 ## Webapp
