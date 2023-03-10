@@ -8,7 +8,6 @@ async function main() {
       { role: "Profesor" },
       { role: "Student" },
       { role: "Administrator" },
-      { role: "Kierownik" },
     ],
   });
 

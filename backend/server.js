@@ -844,11 +844,14 @@ app.delete("/api/deleteUser", async (req, res) => {
     const token = req.body.token;
 
     const octokit = new Octokit({ auth: token });
-    const orgs = await client.getUsersOrgs(userId);
+    const orgs = await client.getStudentsOrgs(userId);
 
     orgs.forEach(async (org) => {
       try {
-        await octokit.orgs.removeMember({ org: org, username: githubLogin });
+        await octokit.orgs.removeMembershipForUser({
+          org: org.githubName,
+          username: githubLogin,
+        });
       } catch (err) {
         console.error(err);
       }

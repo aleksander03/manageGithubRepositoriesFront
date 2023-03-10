@@ -840,5 +840,17 @@ export const getUsersRepositories = async (userId) => {
 
   return repositories;
 };
-//#endregion
 
+export const getStudentsOrgs = async (userId) => {
+  const orgs = await prisma.organizations.findMany({
+    select: { githubName: true },
+    where: {
+      sections: {
+        some: { sectionsToUsers: { some: { user: { id: userId } } } },
+      },
+    },
+  });
+
+  return orgs;
+};
+//#endregion
