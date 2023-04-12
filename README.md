@@ -1,6 +1,7 @@
 # manageGithubRepositoriesFront
 
 ***Wymagania przed instalacją***
+
 **NodeJS** - pobrać (https://nodejs.org/en/download/) i zainstalować
 
 **PostgreSQL** - pobrać (https://www.postgresql.org/download/windows/) i zainstalować
